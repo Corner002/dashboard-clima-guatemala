@@ -21,7 +21,7 @@ Este proyecto nació de la necesidad de democratizar el acceso a la información
 
 ### 3. Ubicación Geográfica de las Estaciones
 ![Comparativa](captura3.png)
-*Diseñado para filtras las estaciones por ubicación
+*Segmentación de estaciones por ubicación
 
 
 
