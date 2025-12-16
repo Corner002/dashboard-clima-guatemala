@@ -17,11 +17,11 @@ Este proyecto nació de la necesidad de democratizar el acceso a la información
 
 ### 2. Análisis Comparativo Histórico
 ![Comparativa](captura2.png)
-*Módulo diseñado para contrastar el comportamiento del clima entre diferentes años
+*Módulo diseñado para contrastar el comportamiento del clima entre diferentes años*
 
 ### 3. Ubicación Geográfica de las Estaciones
 ![Comparativa](captura3.png)
-*Segmentación de estaciones por ubicación
+*Segmentación de estaciones por ubicación*
 
 
 
