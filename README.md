@@ -1,29 +1,47 @@
-🇬🇹 Sistema de Monitoreo Climático Interactivo (INSIVUMEH)
-Dashboard profesional diseñado para centralizar datos históricos (1900-2024) y optimizar la planificación agrícola en Guatemala mediante análisis de datos.
+# 🇬🇹 Sistema de Monitoreo Climático Interactivo (INSIVUMEH)
 
-🚀 Ver App en Vivo: https://dashboard-clima-guatemala-bewnkfvypafure26wqwpxu.streamlit.app/
+> **Herramienta de Inteligencia de Negocios (BI) aplicada al sector AgroTech de Guatemala.**
 
-📊 Visualización del Proyecto
-Panel Principal y Análisis Geoespacial
-Monitoreo de KPIs neón y ubicación interactiva de estaciones climáticas.
+🚀 **[VER DASHBOARD EN VIVO (Click Aquí)](https://dashboard-clima-guatemala-bewnkfvypafure26wqwpxu.streamlit.app/)**
 
-Análisis Comparativo e Histórico
-Herramienta avanzada para contrastar fenómenos climáticos entre años específicos.
+---
 
-Detalle de Datos Crudos
-Acceso transparente a los registros normalizados para validación técnica.
+## 📋 Sobre el Proyecto
+Este proyecto nació de la necesidad de democratizar el acceso a la información climática histórica de Guatemala. Procesando datos del **INSIVUMEH (1900-2024)**, desarrollé una aplicación web que permite visualizar patrones de precipitación y temperatura para mejorar la planificación de cultivos.
 
-🚀 Funcionalidades Clave
-Mapeo Geoespacial: Selección dinámica de estaciones directamente sobre el mapa.
+## 📸 Galería del Sistema
 
-Comparativa Anual: Análisis de tendencias de lluvia, temperatura y humedad para detectar patrones.
+### 1. Panel de Control Geoespacial
+![Vista General](captura1.png)
+*Mapa interactivo que permite filtrar datos seleccionando estaciones georreferenciadas. Incluye KPIs en tiempo real (Lluvia total, Temperaturas extremas).*
 
-Filtros Inteligentes: Segmentación precisa por Departamento, Estación y Rango de Fechas.
+### 2. Análisis Comparativo Histórico
+![Comparativa](captura2.png)
+*Módulo diseñado para contrastar el comportamiento del clima entre diferentes años
 
-🛠️ Tecnologías y Optimización
-Stack: Python, Streamlit, Pandas y Plotly.
+### 3. Ubicación Geográfica de las Estaciones
+![Comparativa](captura3.png)
+*Diseñado para filtras las estaciones por ubicación
 
-Data Engineering: Procesamiento de datos pesados mediante compresión CSV Gzip, reduciendo el tamaño del dataset en un 80% para garantizar un despliegue rápido en la nube.
 
-👨‍💻 Autor
-José Esquina - Ingeniero Agrónomo enfocado en la transformación digital del agro guatemalteco.
+
+---
+
+## 🔧 Ingeniería y Optimización (Backend)
+Más allá de la visualización, este proyecto implicó desafíos de **Ingeniería de Datos**:
+
+* **Optimización de Carga:** Se migró de una base de datos en Excel (25MB) a un sistema de **archivos planos comprimidos (CSV Gzip)**. Esto redujo el peso en un **80%**, permitiendo que la aplicación cargue en segundos incluso en conexiones móviles.
+* **Limpieza de Datos:** Script de Python dedicado a la normalización de nombres de estaciones y manejo de valores nulos para garantizar la integridad estadística.
+* **Despliegue Cloud:** CI/CD integrado entre GitHub y Streamlit Cloud para actualizaciones automáticas.
+
+## 🛠️ Stack Tecnológico
+* **Lenguaje:** Python 3.10+
+* **Core:** Pandas & NumPy (Procesamiento vectorial)
+* **Visualización:** Plotly Express (Gráficos interactivos) & Streamlit (Framework Web)
+
+---
+
+## 👨‍💻 Autor
+**José Esquina**
+*Especialista en Investigación Agrícola | Python & GIS | Transformación Digital*
+[www.linkedin.com/in/jose-esquina-0350aa159]
