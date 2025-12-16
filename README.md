@@ -43,5 +43,6 @@ Más allá de la visualización, este proyecto implicó desafíos de **Ingenier�
 
 ## 👨‍💻 Autor
 **José Esquina**
+/
 *Especialista en Investigación Agrícola | Python & GIS | Transformación Digital*
 [www.linkedin.com/in/jose-esquina-0350aa159]
