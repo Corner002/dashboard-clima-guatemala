@@ -1,24 +1,29 @@
-# 🇬🇹 Sistema de Monitoreo Climático Interactivo para Análisis Agroambiental
+🇬🇹 Sistema de Monitoreo Climático Interactivo (INSIVUMEH)
+Dashboard profesional diseñado para centralizar datos históricos (1900-2024) y optimizar la planificación agrícola en Guatemala mediante análisis de datos.
 
-### 📋 Descripción del Proyecto
-Este Dashboard fue desarrollado para centralizar y visualizar datos climáticos históricos del **INSIVUMEH** (Guatemala). Su objetivo es permitir a ingenieros agrónomos y tomadores de decisiones analizar patrones de precipitación, temperatura y humedad para optimizar la planificación agrícola.
+🚀 Ver App en Vivo: https://dashboard-clima-guatemala-bewnkfvypafure26wqwpxu.streamlit.app/
 
-### 🚀 Funcionalidades Principales
-* **Análisis Temporal:** Visualización de tendencias históricas de lluvia y temperatura.
-* **Mapeo Geoespacial:** Ubicación interactiva de estaciones climáticas.
-* **Comparativa Anual:** Herramienta para comparar fenómenos climáticos (ej. Niño/Niña) entre años específicos.
-* **Filtros Dinámicos:** Segmentación por Departamento, Estación y Rango de Fechas.
+📊 Visualización del Proyecto
+Panel Principal y Análisis Geoespacial
+Monitoreo de KPIs neón y ubicación interactiva de estaciones climáticas.
 
-### 🛠️ Tecnologías Usadas
-* **Python:** Lenguaje principal.
-* **Streamlit:** Framework para la interfaz web interactiva.
-* **Pandas:** Manipulación y limpieza de datos (Data Wrangling).
-* **Plotly:** Gráficos interactivos y mapas.
+Análisis Comparativo e Histórico
+Herramienta avanzada para contrastar fenómenos climáticos entre años específicos.
 
-### 📊 Datos
-Los datos provienen de reportes oficiales meteorológicos de 1900 a 2024, procesados y normalizados para eliminar inconsistencias y permitir el cruce de variables.
+Detalle de Datos Crudos
+Acceso transparente a los registros normalizados para validación técnica.
 
-### 👨‍💻 Autor
-**José Esquina** - Ingeniero Agrónomo & Data Scientist en formación.
-*Enfocado en la transformación digital del agro guatemalteco.*
+🚀 Funcionalidades Clave
+Mapeo Geoespacial: Selección dinámica de estaciones directamente sobre el mapa.
 
+Comparativa Anual: Análisis de tendencias de lluvia, temperatura y humedad para detectar patrones.
+
+Filtros Inteligentes: Segmentación precisa por Departamento, Estación y Rango de Fechas.
+
+🛠️ Tecnologías y Optimización
+Stack: Python, Streamlit, Pandas y Plotly.
+
+Data Engineering: Procesamiento de datos pesados mediante compresión CSV Gzip, reduciendo el tamaño del dataset en un 80% para garantizar un despliegue rápido en la nube.
+
+👨‍💻 Autor
+José Esquina - Ingeniero Agrónomo enfocado en la transformación digital del agro guatemalteco.
