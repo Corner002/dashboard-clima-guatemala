@@ -42,6 +42,19 @@ Más allá de la visualización, el núcleo de este proyecto reside en un robust
 
 ---
 
+## 🚀 Roadmap y Visión a Futuro
+
+Este proyecto se concibe como una herramienta evolucionable. El desarrollo está planificado en las siguientes etapas clave:
+
+### 🛰️ Fase 2: Inteligencia Espacial y ML (2026)
+* **Imputación de datos con Machine Learning:** Implementación de modelos de **Random Forest** para completar de forma científica los vacíos históricos en las series de datos.
+* **Interpolación Dinámica:** Integración de `leafmap` y modelos de interpolación (**Kriging / IDW**) para generar mapas de superficies climáticas continuas, permitiendo estimar valores en zonas sin estaciones cercanas.
+
+### 🤖 Fase 3: Automatización Total (Largo Plazo)
+* **Pipeline de Datos Automatizado:** Integración con herramientas de orquestación (n8n/Python) para la captura y limpieza automática de datos climáticos.
+* **Análisis en Tiempo Real:** Transición de un dashboard de consulta histórica a un sistema de monitoreo y alertas climáticas en tiempo real para el sector agrícola.
+---
+
 ## 👨‍💻 Autor
 **José Esquina**
 
