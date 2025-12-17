@@ -46,4 +46,7 @@ Más allá de la visualización, el núcleo de este proyecto reside en un robust
 **José Esquina**
 
 
-*Especialista en Investigación Agrícola | Python & GIS | Transformación Digital* [Linkedin](www.linkedin.com/in/jose-esquina-0350aa159)
+*Especialista en Investigación Agrícola | Python & GIS | Transformación Digital*
+
+
+[Enlace Linkedin](www.linkedin.com/in/jose-esquina-0350aa159)
