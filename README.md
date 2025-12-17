@@ -7,13 +7,13 @@
 ---
 
 ## 📋 Sobre el Proyecto
-Este proyecto nació de la necesidad de democratizar el acceso a la información climática histórica de Guatemala. Procesando datos del **INSIVUMEH (1900-2024)**, desarrollé una aplicación web que permite visualizar patrones de precipitación y temperatura para mejorar la planificación de cultivos.
+Este proyecto nació de la necesidad de democratizar el acceso a la información climática histórica de Guatemala. Procesando datos del **INSIVUMEH (1900-2024)**, desarrollé una aplicación web que permite visualizar patrones de precipitación, temperatura y humedad relativa para mejorar la planificación de cultivos.
 
 ## 📸 Galería del Sistema
 
 ### 1. Panel de Control Geoespacial
 ![Vista General](captura1.png)
-*Mapa interactivo que permite filtrar datos seleccionando estaciones georreferenciadas. Incluye KPIs en tiempo real (Lluvia total, Temperaturas extremas).*
+*Mapa interactivo que permite filtrar datos seleccionando estaciones georreferenciadas. Incluye KPIs (Lluvia total, Temperaturas, humedad relativa).*
 
 ### 2. Análisis Comparativo Histórico
 ![Comparativa](captura2.png)
