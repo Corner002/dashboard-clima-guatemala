@@ -23,16 +23,17 @@ Este proyecto nació de la necesidad de democratizar el acceso a la información
 ![Comparativa](captura3.png)
 *Segmentación de estaciones por ubicación*
 
-
-
 ---
 
-## 🔧 Ingeniería y Optimización (Backend)
-Más allá de la visualización, este proyecto implicó desafíos de **Ingeniería de Datos**:
+## 🔧 Ingeniería de Datos y Desarrollo del Backend
 
-* **Optimización de Carga:** Se migró de una base de datos en Excel (25MB) a un sistema de **archivos planos comprimidos (CSV Gzip)**. Esto redujo el peso en un **80%**, permitiendo que la aplicación cargue en segundos incluso en conexiones móviles.
-* **Limpieza de Datos:** Script de Python dedicado a la normalización de nombres de estaciones y manejo de valores nulos para garantizar la integridad estadística.
-* **Despliegue Cloud:** CI/CD integrado entre GitHub y Streamlit Cloud para actualizaciones automáticas.
+Más allá de la visualización, el núcleo de este proyecto reside en un robusto proceso de ingeniería para transformar datos meteorológicos crudos en información accionable:
+
+* **Data Wrangling con Pandas:** Implementé un flujo de trabajo para procesar registros históricos (1990–2024), realizando la limpieza de inconsistencias, normalización de nombres de estaciones y gestión de valores nulos (NaN) para asegurar la integridad analítica.
+* **Refinamiento Lógico e Iterativo:** El código fuente fue desarrollado a través de múltiples ciclos de iteración, optimizando la lógica de los filtros dinámicos y la arquitectura de las funciones para garantizar un rendimiento fluido y escalable.
+* **Optimización de Almacenamiento (Gzip):** Para superar las limitaciones de carga en la nube, se migró la base de datos de formatos pesados (Excel 25MB) a **archivos CSV con compresión Gzip**. Esto redujo el peso en un **80%**, permitiendo tiempos de respuesta inmediatos incluso en conexiones de baja velocidad.
+* **Arquitectura Escalable:** El backend está diseñado de forma modular para facilitar la integración anual de nuevos datasets (como el próximo ciclo 2025) sin necesidad de reescribir la lógica principal del sistema.
+* **Despliegue e Integración Continua (CI/CD):** Configuré una conexión directa entre este repositorio y **Streamlit Cloud**, permitiendo que cada mejora en el código fuente se refleje automáticamente en la aplicación en vivo.
 
 ## 🛠️ Stack Tecnológico
 * **Lenguaje:** Python 3.10+
