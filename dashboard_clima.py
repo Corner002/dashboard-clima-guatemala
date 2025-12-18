@@ -289,11 +289,29 @@ with tab_comp:
     if len(años_selec) < 2:
         st.info("💡 Selecciona al menos 2 años para comparar.")
     else:
-        df_c = df_filtrado.groupby(['Año', 'Mes_Nombre'], observed=False).agg({'Precipitacion':'sum', 'Temp_Media':'mean', 'Humedad':'mean'}).reset_index()
+        df_c = df_filtrado.groupby(['Año', 'Mes_Nombre'], observed=False).agg({
+            'Precipitacion':'sum', 
+            'Temp_Media':'mean', 
+            'Humedad':'mean'
+        }).reset_index()
         df_c['Año'] = df_c['Año'].astype(str)
+        
         c1, c2 = st.columns(2)
         with c1: 
-            st.plotly_chart(px.line(df_c, x='Mes_Nombre', y='Precipitacion', color='Año', title="🌧️ Lluvias Comparativas", template='plotly_dark', category_orders={"Mes_Nombre": ORDEN_MESES}), use_container_width=True)
+            st.plotly_chart(px.line(df_c, x='Mes_Nombre', y='Precipitacion', color='Año', 
+                                   title="🌧️ Lluvias Comparativas", template='plotly_dark', 
+                                   category_orders={"Mes_Nombre": ORDEN_MESES},
+                                   labels={"Mes_Nombre": "Mes"}), 
+                          use_container_width=True)
         with c2: 
-            st.plotly_chart(px.line(df_c, x='Mes_Nombre', y='Temp_Media', color='Año', title="🌡️ Temperaturas Comparativas", template='plotly_dark', category_orders={"Mes_Nombre": ORDEN_MESES}), use_container_width=True)
-        st.plotly_chart(px.bar(df_c, x='Mes_Nombre', y='Humedad', color='Año', barmode='group', title="💨 Humedad Comparativa", template='plotly_dark', category_orders={"Mes_Nombre": ORDEN_MESES}), use_container_width=True)
+            st.plotly_chart(px.line(df_c, x='Mes_Nombre', y='Temp_Media', color='Año', 
+                                   title="🌡️ Temperaturas Comparativas", template='plotly_dark', 
+                                   category_orders={"Mes_Nombre": ORDEN_MESES},
+                                   labels={"Mes_Nombre": "Mes"}), 
+                          use_container_width=True)
+        
+        st.plotly_chart(px.bar(df_c, x='Mes_Nombre', y='Humedad', color='Año', barmode='group', 
+                              title="💨 Humedad Comparativa", template='plotly_dark', 
+                              category_orders={"Mes_Nombre": ORDEN_MESES},
+                              labels={"Mes_Nombre": "Mes"}), 
+                       use_container_width=True)
