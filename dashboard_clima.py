@@ -85,22 +85,27 @@ def cargar_datos():
         st.stop()
 
 df = cargar_datos()
-
-# Lista de años
 años_disp = sorted([int(x) for x in df['Año'].dropna().unique().tolist()], reverse=True)
 
 # -----------------------------------------------------------------------------
 # 3. LÓGICA DE FILTROS Y RESET
 # -----------------------------------------------------------------------------
+# --- AQUÍ ESTABA EL ERROR: Faltaba inicializar estas variables ---
 if 'estado_depto' not in st.session_state: st.session_state.estado_depto = 'Todos'
+if 'estado_estacion' not in st.session_state: st.session_state.estado_estacion = 'Todas'
+# -----------------------------------------------------------------
 
 def reset_filtros():
+    # Reseteo visual (Selectbox)
     st.session_state['sb_depto'] = 'Todos'
     st.session_state['sb_estacion'] = 'Todas'
     st.session_state['years_select'] = [años_disp[0]]
     st.session_state.sb_m_ini = 'Enero'
     st.session_state.sb_m_fin = 'Diciembre'
+    
+    # Reseteo interno (Para que el mapa y los filtros reaccionen)
     st.session_state.estado_depto = 'Todos'
+    st.session_state.estado_estacion = 'Todas'
 
 # -----------------------------------------------------------------------------
 # 4. HEADER
@@ -127,6 +132,7 @@ if st.sidebar.button("🧹 RESTAURAR TODO"):
 
 # Depto
 deptos = ['Todos'] + sorted(df['Departamento'].unique().tolist())
+# Recuperación segura del índice
 try: idx_depto = deptos.index(st.session_state.sb_depto) if 'sb_depto' in st.session_state else 0
 except: idx_depto = 0
 
@@ -143,7 +149,15 @@ if depto_selec != 'Todos':
 else:
     estaciones_disp = ['Todas'] + sorted(df['NOMBRE_ESTACIÓN'].unique().tolist())
 
-estacion_selec = st.sidebar.selectbox("2. Estación", estaciones_disp, key='sb_estacion')
+# Recuperación segura del índice para estación
+try: idx_est = estaciones_disp.index(st.session_state.estado_estacion) if st.session_state.estado_estacion in estaciones_disp else 0
+except: idx_est = 0
+
+estacion_selec = st.sidebar.selectbox("2. Estación", estaciones_disp, index=idx_est, key='sb_estacion')
+
+if estacion_selec != st.session_state.estado_estacion:
+    st.session_state.estado_estacion = estacion_selec
+    st.rerun()
 
 st.sidebar.markdown("---")
 
@@ -254,8 +268,12 @@ with tab_resumen:
             punto = event['selection']['points'][0]
             estacion_click = punto['customdata'][0]
             depto_click = punto['customdata'][1]
+            
+            # --- AQUÍ EXPLOTABA EL CÓDIGO ANTES, AHORA ESTÁ ARREGLADO ---
             if estacion_click != st.session_state.estado_estacion:
                 st.session_state.estado_depto = depto_click
+                st.session_state.estado_estacion = estacion_click
+                # Forzamos actualización visual de los selectbox
                 st.session_state['sb_depto'] = depto_click
                 st.session_state['sb_estacion'] = estacion_click
                 st.rerun()
@@ -279,7 +297,7 @@ with tab_comp:
     if len(años_selec) < 2:
         st.info("💡 Selecciona al menos 2 años para comparar.")
     else:
-        # AQUÍ ESTÁ EL CAMBIO CLAVE: observed=True evita que se generen ceros donde no hay datos
+        # observed=True arregla las líneas planas
         df_c = df_filtrado.groupby(['Año', 'Mes_Nombre'], observed=True).agg({
             'Precipitacion':'sum', 
             'Temp_Media':'mean', 
@@ -289,7 +307,6 @@ with tab_comp:
         
         c1, c2 = st.columns(2)
         with c1: 
-            # Separamos la figura para poder aplicarle update_traces(connectgaps=False)
             fig_p = px.line(df_c, x='Mes_Nombre', y='Precipitacion', color='Año', 
                            title="🌧️ Lluvias Comparativas", template='plotly_dark', 
                            category_orders={"Mes_Nombre": ORDEN_MESES},
@@ -298,7 +315,6 @@ with tab_comp:
             st.plotly_chart(fig_p, use_container_width=True)
             
         with c2: 
-            # Hacemos lo mismo para temperatura para garantizar consistencia
             fig_t = px.line(df_c, x='Mes_Nombre', y='Temp_Media', color='Año', 
                            title="🌡️ Temperaturas Comparativas", template='plotly_dark', 
                            category_orders={"Mes_Nombre": ORDEN_MESES},
