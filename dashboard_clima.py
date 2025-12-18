@@ -39,7 +39,7 @@ h1, h2, h3 { color: #ffffff; }
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# 2. CARGA DE DATOS (ORDEN CORRECTO PARA QUE EL RESET FUNCIONE)
+# 2. CARGA DE DATOS
 # -----------------------------------------------------------------------------
 ORDEN_MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
 
@@ -86,7 +86,7 @@ def cargar_datos():
 
 df = cargar_datos()
 
-# Lista de años calculada ANTES de usarla en reset
+# Lista de años
 años_disp = sorted([int(x) for x in df['Año'].dropna().unique().tolist()], reverse=True)
 
 # -----------------------------------------------------------------------------
@@ -97,7 +97,6 @@ if 'estado_depto' not in st.session_state: st.session_state.estado_depto = 'Todo
 def reset_filtros():
     st.session_state['sb_depto'] = 'Todos'
     st.session_state['sb_estacion'] = 'Todas'
-    # Corrección del bug de años: forzamos la lista de selección al valor por defecto
     st.session_state['years_select'] = [años_disp[0]]
     st.session_state.sb_m_ini = 'Enero'
     st.session_state.sb_m_fin = 'Diciembre'
@@ -280,7 +279,8 @@ with tab_comp:
     if len(años_selec) < 2:
         st.info("💡 Selecciona al menos 2 años para comparar.")
     else:
-        df_c = df_filtrado.groupby(['Año', 'Mes_Nombre'], observed=False).agg({
+        # AQUÍ ESTÁ EL CAMBIO CLAVE: observed=True evita que se generen ceros donde no hay datos
+        df_c = df_filtrado.groupby(['Año', 'Mes_Nombre'], observed=True).agg({
             'Precipitacion':'sum', 
             'Temp_Media':'mean', 
             'Humedad':'mean'
@@ -289,22 +289,25 @@ with tab_comp:
         
         c1, c2 = st.columns(2)
         with c1: 
-            st.plotly_chart(px.line(df_c, x='Mes_Nombre', y='Precipitacion', color='Año', 
-                                   title="🌧️ Lluvias Comparativas", template='plotly_dark', 
-                                   category_orders={"Mes_Nombre": ORDEN_MESES},
-                                   labels={"Mes_Nombre": "Mes"}), 
-                          use_container_width=True)
+            # Separamos la figura para poder aplicarle update_traces(connectgaps=False)
+            fig_p = px.line(df_c, x='Mes_Nombre', y='Precipitacion', color='Año', 
+                           title="🌧️ Lluvias Comparativas", template='plotly_dark', 
+                           category_orders={"Mes_Nombre": ORDEN_MESES},
+                           labels={"Mes_Nombre": "Mes"})
+            fig_p.update_traces(connectgaps=False)
+            st.plotly_chart(fig_p, use_container_width=True)
+            
         with c2: 
-            st.plotly_chart(px.line(df_c, x='Mes_Nombre', y='Temp_Media', color='Año', 
-                                   title="🌡️ Temperaturas Comparativas", template='plotly_dark', 
-                                   category_orders={"Mes_Nombre": ORDEN_MESES},
-                                   labels={"Mes_Nombre": "Mes"}), 
-                          use_container_width=True)
-        
+            # Hacemos lo mismo para temperatura para garantizar consistencia
+            fig_t = px.line(df_c, x='Mes_Nombre', y='Temp_Media', color='Año', 
+                           title="🌡️ Temperaturas Comparativas", template='plotly_dark', 
+                           category_orders={"Mes_Nombre": ORDEN_MESES},
+                           labels={"Mes_Nombre": "Mes"})
+            fig_t.update_traces(connectgaps=False)
+            st.plotly_chart(fig_t, use_container_width=True)
+            
         st.plotly_chart(px.bar(df_c, x='Mes_Nombre', y='Humedad', color='Año', barmode='group', 
                               title="💨 Humedad Comparativa", template='plotly_dark', 
                               category_orders={"Mes_Nombre": ORDEN_MESES},
                               labels={"Mes_Nombre": "Mes"}), 
                        use_container_width=True)
-
-
