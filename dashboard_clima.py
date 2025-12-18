@@ -40,7 +40,7 @@ h1, h2, h3 { color: #ffffff; }
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# 2. ENCABEZADO (HTML PEGADO A LA IZQUIERDA)
+# 2. ENCABEZADO (HTML CORRECTO)
 # -----------------------------------------------------------------------------
 st.markdown("<h1 style='text-align: center; color: white;'>🇬🇹 Sistema de Monitoreo Climático - INSIVUMEH</h1>", unsafe_allow_html=True)
 
@@ -103,7 +103,7 @@ def cargar_datos():
         cols_num = ['Temp_Max', 'Temp_Min', 'Temp_Media', 'Precipitacion', 'Humedad']
         df_final[cols_num] = df_final[cols_num].apply(pd.to_numeric, errors='coerce')
         
-        # Corrección del walrus operator que fallaba
+        # ERROR CORREGIDO: Sintaxis estándar
         cols_no_cero = ['Temp_Max', 'Temp_Min', 'Temp_Media', 'Humedad']
         for col in cols_no_cero:
             df_final.loc[df_final[col] == 0, col] = np.nan
@@ -173,6 +173,7 @@ def plot_barras(data, x, y, titulo, color_hex):
     return fig
 
 def plot_linea(data, x, y, titulo, color_hex):
+    # Gráfica limpia MENSUAL
     fig = px.line(data, x=x, y=y, title=titulo, markers=True, color_discrete_sequence=[color_hex], 
                   template='plotly_dark', category_orders={x: ORDEN_MESES},
                   labels={x: "Mes", y: "Temperatura (°C)"})
@@ -212,6 +213,7 @@ with tab_resumen:
             st.plotly_chart(plot_barras(df_lluvia, 'Mes_Nombre', 'Precipitacion', "🌧️ Precipitación Mensual", "#00e6e6"), use_container_width=True)
         
         with col_g2:
+            # Gráfica corregida: Promedio Mensual
             df_temp = df_filtrado.groupby(['Mes_Nombre'], observed=False)['Temp_Media'].mean().reset_index()
             st.plotly_chart(plot_linea(df_temp, 'Mes_Nombre', 'Temp_Media', "🌡️ Temperatura Media Mensual", "#ffe600"), use_container_width=True)
 
@@ -234,44 +236,4 @@ with tab_resumen:
             df_mapa = df.groupby(['NOMBRE_ESTACIÓN', 'Latitud', 'Longitud', 'Departamento']).agg({'Precipitacion': 'sum'}).reset_index()
             zoom_ini = 6.5
             
-        neon_palette = ['#ff00ff', '#00ff00', '#e6e600', '#ff4500', '#00bfff', '#9400d3', '#ff1493', '#00fa9a', '#ffc400', '#ADFF2F']
-        deptos_unicos = sorted(df_mapa['Departamento'].unique())
-        color_map_deptos = {depto: neon_palette[i % len(neon_palette)] for i, depto in enumerate(deptos_unicos)}
-        
-        df_mapa['Color_Final'] = df_mapa.apply(lambda x: '#000000' if x['NOMBRE_ESTACIÓN'] == estacion_selec else color_map_deptos.get(x['Departamento'], '#555555'), axis=1)
-        df_mapa['Size_Final'] = df_mapa['NOMBRE_ESTACIÓN'].apply(lambda x: 35 if x == estacion_selec else 14)
-
-        fig_map = px.scatter_mapbox(df_mapa, lat="Latitud", lon="Longitud", hover_name="NOMBRE_ESTACIÓN", zoom=zoom_ini, mapbox_style="carto-positron", height=550, custom_data=['NOMBRE_ESTACIÓN', 'Departamento'])
-        fig_map.update_traces(marker=dict(color=df_mapa['Color_Final'], size=df_mapa['Size_Final'], opacity=0.9, allowoverlap=True))
-        fig_map.update_layout(clickmode='event+select', margin={"r":0,"t":0,"l":0,"b":0})
-        
-        event = st.plotly_chart(fig_map, on_select="rerun", selection_mode="points", use_container_width=True, key="mapa_main")
-        
-        if event and len(event['selection']['points']) > 0:
-            punto = event['selection']['points'][0]
-            estacion_click = punto['customdata'][0]
-            depto_click = punto['customdata'][1]
-            if estacion_click != st.session_state.estado_estacion:
-                st.session_state.estado_depto = depto_click
-                st.session_state.estado_estacion = estacion_click
-                if 'sb_depto' in st.session_state: del st.session_state['sb_depto']
-                if 'sb_estacion' in st.session_state: del st.session_state['sb_estacion']
-                st.rerun()
-
-        with st.expander("📋 Ver Tabla de Datos Crudos"):
-            st.dataframe(df_filtrado[['FECHA', 'NOMBRE_ESTACIÓN', 'Temp_Max', 'Temp_Min', 'Temp_Media', 'Precipitacion', 'Humedad']], use_container_width=True)
-
-with tab_comp:
-    if estacion_selec != 'Todas': st.markdown(f"### 🆚 Comparando: {estacion_selec}")
-    if len(años_selec) < 2:
-        st.info("💡 Selecciona al menos 2 años para comparar.")
-    else:
-        df_c = df_filtrado.groupby(['Año', 'Mes_Nombre'], observed=False).agg({'Precipitacion':'sum', 'Temp_Media':'mean', 'Humedad':'mean'}).reset_index()
-        df_c['Año'] = df_c['Año'].astype(str)
-        c1, c2 = st.columns(2)
-        with c1: 
-            # Corrección de sintaxis: se asegura que los strings no se corten
-            st.plotly_chart(px.line(df_c, x='Mes_Nombre', y='Precipitacion', color='Año', title="🌧️ Lluvias Comparativas", template='plotly_dark', category_orders={"Mes_Nombre": ORDEN_MESES}), use_container_width=True)
-        with c2: 
-            st.plotly_chart(px.line(df_c, x='Mes_Nombre', y='Temp_Media', color='Año', title="🌡️ Temperaturas Comparativas", template='plotly_dark', category_orders={"Mes_Nombre": ORDEN_MESES}), use_container_width=True)
-        st.plotly_chart(px.bar(df_c, x='Mes_Nombre', y='Humedad', color='Año', barmode='group', title="💨 Humedad Comparativa", template='plotly_dark', category_orders={"Mes_Nombre": ORDEN_MESES}), use_container_width=True)
+        neon_palette = ['#ff00ff', '#00ff00', '#e6e600', '#ff450
