@@ -103,10 +103,13 @@ def cargar_datos():
         cols_num = ['Temp_Max', 'Temp_Min', 'Temp_Media', 'Precipitacion', 'Humedad']
         df_final[cols_num] = df_final[cols_num].apply(pd.to_numeric, errors='coerce')
         
-        # ERROR CORREGIDO: Sintaxis estándar
+        # MEJORA #1: Reemplazo más eficiente de ceros por NaN
         cols_no_cero = ['Temp_Max', 'Temp_Min', 'Temp_Media', 'Humedad']
-        for col in cols_no_cero:
-            df_final.loc[df_final[col] == 0, col] = np.nan
+        df_final[cols_no_cero] = df_final[cols_no_cero].replace(0, np.nan)
+        
+        # MEJORA #2: Validación de datos vacíos
+        if df_final.empty:
+            raise ValueError("Los archivos no contienen datos válidos después del procesamiento")
             
         return df_final.sort_values('FECHA')
     except Exception as e:
@@ -144,6 +147,11 @@ if estacion_selec != st.session_state.estado_estacion:
 st.sidebar.markdown("---")
 años_disp = sorted([int(x) for x in df['Año'].dropna().unique().tolist()], reverse=True)
 años_selec = st.sidebar.multiselect("Años", años_disp, default=años_disp[:1], key='years_select')
+
+# MEJORA #3: Validación de años seleccionados
+if not años_selec:
+    st.sidebar.warning("⚠️ Selecciona al menos 1 año para continuar")
+    st.stop()
 
 col_m1, col_m2 = st.sidebar.columns(2)
 mes_inicio = col_m1.selectbox("Desde", ORDEN_MESES, index=0, key='sb_m_ini')
@@ -235,8 +243,9 @@ with tab_resumen:
         else:
             df_mapa = df.groupby(['NOMBRE_ESTACIÓN', 'Latitud', 'Longitud', 'Departamento']).agg({'Precipitacion': 'sum'}).reset_index()
             zoom_ini = 6.5
-            
-        neon_palette = ['#ff00ff', '#00ff00', '#e6e600', '#ff4500', '#00bfff', '#9400d3', '#ff1493', '#00fa9a', '#ffc400', '#ADFF2F']
+        
+        # MEJORA #4: Color duplicado corregido    
+        neon_palette = ['#ff00ff', '#00ff00', '#00e6e6', '#ff4500', '#00bfff', '#9400d3', '#ff1493', '#00fa9a', '#ffc400', '#ADFF2F']
         deptos_unicos = sorted(df_mapa['Departamento'].unique())
         color_map_deptos = {depto: neon_palette[i % len(neon_palette)] for i, depto in enumerate(deptos_unicos)}
         
@@ -271,7 +280,6 @@ with tab_resumen:
                     "Temp_Min": st.column_config.NumberColumn("Min (°C)", format="%.1f"),
                     "Temp_Media": st.column_config.NumberColumn("Med (°C)", format="%.1f"),
                     "Precipitacion": st.column_config.NumberColumn("Lluvia (mm)", format="%.1f"),
-                    # Esta es la barra que se había perdido:
                     "Humedad": st.column_config.ProgressColumn("Hum %", format="%.0f", min_value=0, max_value=100),
                 }
             )
