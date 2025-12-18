@@ -7,7 +7,7 @@
 ---
 
 ## 📋 Sobre el Proyecto
-Este proyecto nació de la necesidad de democratizar el acceso a la información climática histórica de Guatemala. Procesando datos del **INSIVUMEH (1900-2024)**, desarrollé una aplicación web que permite visualizar patrones de precipitación, temperatura y humedad relativa para mejorar la planificación de cultivos.
+Este proyecto nació de la necesidad de democratizar el acceso a la información climática histórica de Guatemala. Procesando datos del **INSIVUMEH (1990-2024)**, desarrollé una aplicación web que permite visualizar patrones de precipitación, temperatura y humedad relativa para mejorar la planificación de cultivos.
 
 ## 📸 Galería del Sistema
 
