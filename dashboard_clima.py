@@ -49,7 +49,7 @@ st.markdown("""
 <p style="color: white; font-size: 1rem; margin-bottom: 5px;">Realizado por:</p>
 <div style="color: #00f2ff; font-size: 1.6rem; font-weight: bold; text-shadow: 0 0 10px #00f2ff, 0 0 20px #00f2ff; margin-bottom: 10px;">José Esquina</div>
 <a href="https://www.linkedin.com/in/jose-esquina-0350aa159" target="_blank" style="text-decoration: none; color: white; border: 1px solid #00f2ff; padding: 6px 18px; border-radius: 25px; font-weight: bold; display: inline-block; margin-bottom: 10px; transition: 0.3s;">🔗 Contactar en LinkedIn</a>
-<p style="color: #cccccc; font-size: 0.9rem;"><b>AgroDATA</b> | Especialista en Investigación Agrícola | Python & GIS | Enfocado en Agricultura de Precisión</p>
+<p style="color: #cccccc; font-size: 0.9rem;"><b>AgroDATA</b> | Especialista en Investigación Agrícola | Python & GIS | Transformación Digital</p>
 </div>
 <hr>
 """, unsafe_allow_html=True)
@@ -315,5 +315,6 @@ with tab_comp:
                               category_orders={"Mes_Nombre": ORDEN_MESES},
                               labels={"Mes_Nombre": "Mes"}), 
                        use_container_width=True)
+
 
 
