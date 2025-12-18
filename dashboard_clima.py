@@ -88,23 +88,42 @@ df = cargar_datos()
 años_disp = sorted([int(x) for x in df['Año'].dropna().unique().tolist()], reverse=True)
 
 # -----------------------------------------------------------------------------
-# 3. GESTIÓN DE ESTADO (Callbacks)
+# 3. GESTIÓN DE ESTADO (CALLBACKS PARA QUE NO FALLE)
 # -----------------------------------------------------------------------------
+# Inicializamos las variables si no existen
 if 'sb_depto' not in st.session_state: st.session_state['sb_depto'] = 'Todos'
 if 'sb_estacion' not in st.session_state: st.session_state['sb_estacion'] = 'Todas'
 if 'years_select' not in st.session_state: st.session_state['years_select'] = [años_disp[0]]
 
-def al_cambiar_depto():
-    """Callback: Si cambia el depto, reseteamos la estación a 'Todas'."""
-    st.session_state['sb_estacion'] = 'Todas'
+# --- LOGICA INNOVADORA: DETECTAR CLIC EN MAPA ANTES DE DIBUJAR SIDEBAR ---
+# Esto evita el StreamlitAPIException porque actualizamos el estado ANTES de crear el widget
+if "mapa_main" in st.session_state and st.session_state.mapa_main:
+    selection = st.session_state.mapa_main
+    # Verificamos si hay una selección válida
+    if "selection" in selection and "points" in selection["selection"] and selection["selection"]["points"]:
+        point = selection["selection"]["points"][0]
+        map_est = point["customdata"][0]
+        map_depto = point["customdata"][1]
+        
+        # Si la estación del mapa es diferente a la actual, actualizamos
+        if map_est != st.session_state['sb_estacion']:
+            st.session_state['sb_depto'] = map_depto
+            st.session_state['sb_estacion'] = map_est
+
+# --- CALLBACKS DEL SIDEBAR ---
+# Cuando tocamos el sidebar, borramos la memoria del mapa para que no haya conflicto
+def al_cambiar_sidebar():
+    if "mapa_main" in st.session_state:
+        st.session_state.mapa_main = {} # Limpiamos la selección del mapa
 
 def reset_filtros():
-    """Callback: Resetea todo a valores por defecto."""
     st.session_state['sb_depto'] = 'Todos'
     st.session_state['sb_estacion'] = 'Todas'
     st.session_state['years_select'] = [años_disp[0]]
     st.session_state.sb_m_ini = 'Enero'
     st.session_state.sb_m_fin = 'Diciembre'
+    if "mapa_main" in st.session_state:
+        st.session_state.mapa_main = {}
 
 # -----------------------------------------------------------------------------
 # 4. HEADER
@@ -122,15 +141,15 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# 5. PANEL LATERAL (Sin reruns manuales)
+# 5. PANEL LATERAL (CONECTADO A LOS CALLBACKS)
 # -----------------------------------------------------------------------------
 st.sidebar.header("🎛️ Panel de Control")
 st.sidebar.button("🧹 RESTAURAR TODO", on_click=reset_filtros)
 
 # 1. DEPARTAMENTO
 deptos = ['Todos'] + sorted(df['Departamento'].unique().tolist())
-# Usamos on_change para manejar la lógica de actualización
-depto_selec = st.sidebar.selectbox("1. Departamento", deptos, key='sb_depto', on_change=al_cambiar_depto)
+# on_change limpia el mapa para que no haya conflicto "fantasma"
+depto_selec = st.sidebar.selectbox("1. Departamento", deptos, key='sb_depto', on_change=al_cambiar_sidebar)
 
 # 2. ESTACIÓN
 if depto_selec != 'Todos':
@@ -138,11 +157,11 @@ if depto_selec != 'Todos':
 else:
     estaciones_disp = ['Todas'] + sorted(df['NOMBRE_ESTACIÓN'].unique().tolist())
 
-# Aseguramos que la selección actual sea válida, si no, reset a 'Todas'
+# Validación de seguridad por si cambia el depto y la estación vieja no existe
 if st.session_state['sb_estacion'] not in estaciones_disp:
     st.session_state['sb_estacion'] = 'Todas'
 
-estacion_selec = st.sidebar.selectbox("2. Estación", estaciones_disp, key='sb_estacion')
+estacion_selec = st.sidebar.selectbox("2. Estación", estaciones_disp, key='sb_estacion', on_change=al_cambiar_sidebar)
 
 st.sidebar.markdown("---")
 
@@ -232,6 +251,7 @@ with tab_resumen:
 
         st.markdown("---")
         st.subheader("📍 Ubicación Geográfica")
+        st.caption("Haz clic en un punto para filtrar. El mapa controla el menú lateral.")
         
         if depto_selec != 'Todos':
             df_mapa = df[df['Departamento'] == depto_selec].groupby(['NOMBRE_ESTACIÓN', 'Latitud', 'Longitud', 'Departamento']).agg({'Precipitacion': 'sum'}).reset_index()
@@ -251,19 +271,9 @@ with tab_resumen:
         fig_map.update_traces(marker=dict(color=df_mapa['Color_Final'], size=df_mapa['Size_Final'], opacity=0.9, allowoverlap=True))
         fig_map.update_layout(clickmode='event+select', margin={"r":0,"t":0,"l":0,"b":0})
         
-        # --- LÓGICA DE CLIC EN MAPA (SIN ERROR APIEXCEPTION) ---
-        event = st.plotly_chart(fig_map, on_select="rerun", selection_mode="points", use_container_width=True, key="mapa_main")
-        
-        if event and len(event['selection']['points']) > 0:
-            punto = event['selection']['points'][0]
-            estacion_click = punto['customdata'][0]
-            depto_click = punto['customdata'][1]
-            
-            # Solo actualizamos si es diferente para evitar loops
-            if estacion_click != st.session_state['sb_estacion']:
-                st.session_state['sb_depto'] = depto_click
-                st.session_state['sb_estacion'] = estacion_click
-                st.rerun()
+        # --- MAPA FINAL: SIN LOGICA AQUI, SOLO RENDERIZA ---
+        # La lógica de actualización ya ocurrió al inicio del script (Línea 100 aprox)
+        st.plotly_chart(fig_map, on_select="rerun", selection_mode="points", use_container_width=True, key="mapa_main")
 
         with st.expander("📋 Ver Tabla de Datos Crudos"):
             st.dataframe(
