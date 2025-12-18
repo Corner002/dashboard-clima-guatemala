@@ -14,7 +14,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Estilos CSS 
+# Estilos CSS (Nota: El contenido dentro de <style> está pegado a la izquierda para evitar errores)
 st.markdown("""
 <style>
 .stApp { background-color: #0e1117; }
