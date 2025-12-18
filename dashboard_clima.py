@@ -74,55 +74,45 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# --- HEADER PRINCIPAL (TITULO CENTRADO + FIRMA + BOTÓN) ---
+# --- HEADER PRINCIPAL (CORREGIDO) ---
 # -----------------------------------------------------------------------------
 
-# 1. Título Centrado con HTML
 st.markdown("<h1 style='text-align: center; color: white;'>🇬🇹 Sistema de Monitoreo Climático - INSIVUMEH</h1>", unsafe_allow_html=True)
 
-# 2. Bloque de Autoría + Botón LinkedIn
+# Bloque de Autoría SIMPLIFICADO Y SEGURO
 st.markdown(
     """
-    <div style="text-align: center; margin-top: -10px; margin-bottom: 15px;">
-        <p style="color: white; font-size: 1rem; margin-bottom: 5px;">
-            Realizado por:
-        </p>
-        
-        <div style="
-            color: #00f2ff;
-            font-size: 1.5rem;
-            font-weight: bold;
+    <div style="text-align: center;">
+        <p style="color: white; margin-bottom: 5px;">Realizado por:</p>
+        <h2 style="
+            color: #00f2ff; 
+            margin: 0; 
+            padding: 0;
             text-shadow: 0 0 10px #00f2ff, 0 0 20px #00f2ff;
-            margin-bottom: 10px;
-        ">
+            font-size: 1.8rem;">
             José Esquina
-        </div>
-
+        </h2>
+        <br>
         <a href="https://www.linkedin.com/in/jose-esquina-0350aa159" target="_blank" style="
-            background-color: transparent;
-            border: 1px solid #00f2ff;
-            color: white;
-            padding: 6px 18px;
-            border-radius: 20px;
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: bold;
             display: inline-block;
-            transition: all 0.3s ease;
-            margin-bottom: 10px;
-        ">
+            text-decoration: none;
+            color: white;
+            border: 1px solid #00f2ff;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            transition: 0.3s;
+            margin-bottom: 10px;">
             🔗 Contactar en LinkedIn
         </a>
-
         <p style="color: #cccccc; font-size: 0.9rem; margin-top: 10px;">
             <b>AgroDATA</b> | Especialista en Investigación Agrícola | Python & GIS | Enfocado en Agricultura de Precisión
         </p>
     </div>
-    """,
+    <hr>
+    """, 
     unsafe_allow_html=True
 )
-
-st.markdown("---")
 
 # -----------------------------------------------------------------------------
 # 2. GESTIÓN DE ESTADO
@@ -281,28 +271,25 @@ def plot_linea(data, x, y, titulo, color_hex):
     # Generamos la gráfica básica
     fig = px.line(data, x=x, y=y, title=titulo, markers=True, color_discrete_sequence=[color_hex], 
                   template='plotly_dark',
-                  labels={x: "Mes"}) # Forzamos que la etiqueta del eje diga "Mes"
+                  labels={x: "Mes"}) 
     
     fig.update_traces(connectgaps=False) 
     
-    # --- CORRECCIÓN DE FECHAS A ESPAÑOL Y LIMPIEZA ---
+    # --- ARREGLO FINAL DE ETIQUETAS (SOLO MESES LIMPIOS) ---
     if x == 'FECHA' and not data.empty:
-        # Encontramos el primer día de cada mes presente
+        # Forzamos que Plotly use solo el nombre del mes en español
+        # Calculamos el día 1 de cada mes presente para poner la etiqueta ahí
         fechas_ticks = data.groupby(['Año', 'Mes_Num'])[x].min().sort_values()
         
-        # Mapeamos a nombres en español
+        # Generamos la etiqueta SOLO CON EL NOMBRE DEL MES (Ej: "Enero", "Febrero")
+        # Quitamos el año para que no te salga "23" ni nada raro.
         nombres_ticks = [ORDEN_MESES[d.month - 1] for d in fechas_ticks]
         
-        # Si hay varios años, agregamos el año (Ej: Enero 23)
-        if data['Año'].nunique() > 1:
-            nombres_ticks = [f"{ORDEN_MESES[d.month - 1]} {str(d.year)[-2:]}" for d in fechas_ticks]
-
-        # Aplicamos al eje X
         fig.update_xaxes(
             tickmode = 'array',
             tickvals = fechas_ticks,
-            ticktext = nombres_ticks,
-            range = [data[x].min(), data[x].max()] # ELIMINA espacio extra
+            ticktext = nombres_ticks, # <--- AQUI ESTA LA MAGIA: Solo texto limpio
+            range = [data[x].min(), data[x].max()]
         )
 
     fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(t=40, b=20))
