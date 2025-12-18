@@ -14,7 +14,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Estilos CSS
 st.markdown("""
 <style>
 .stApp { background-color: #0e1117; }
@@ -40,36 +39,9 @@ h1, h2, h3 { color: #ffffff; }
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# 2. ENCABEZADO (HTML CORRECTO)
-# -----------------------------------------------------------------------------
-st.markdown("<h1 style='text-align: center; color: white;'>🇬🇹 Sistema de Monitoreo Climático - INSIVUMEH</h1>", unsafe_allow_html=True)
-
-st.markdown("""
-<div style="text-align: center; margin-top: -10px; margin-bottom: 15px;">
-<p style="color: white; font-size: 1rem; margin-bottom: 5px;">Realizado por:</p>
-<div style="color: #00f2ff; font-size: 1.6rem; font-weight: bold; text-shadow: 0 0 10px #00f2ff, 0 0 20px #00f2ff; margin-bottom: 10px;">José Esquina</div>
-<a href="https://www.linkedin.com/in/jose-esquina-0350aa159" target="_blank" style="text-decoration: none; color: white; border: 1px solid #00f2ff; padding: 6px 18px; border-radius: 25px; font-weight: bold; display: inline-block; margin-bottom: 10px; transition: 0.3s;">🔗 Contactar en LinkedIn</a>
-<p style="color: #cccccc; font-size: 0.9rem;"><b>AgroDATA</b> | Especialista en Investigación Agrícola | Python & GIS | Transformación Digital</p>
-</div>
-<hr>
-""", unsafe_allow_html=True)
-
-# -----------------------------------------------------------------------------
-# 3. LÓGICA Y DATOS
+# 2. CARGA DE DATOS (MOVIDO AL INICIO PARA EVITAR ERRORES DE LOGICA)
 # -----------------------------------------------------------------------------
 ORDEN_MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
-
-if 'estado_depto' not in st.session_state: st.session_state.estado_depto = 'Todos'
-if 'estado_estacion' not in st.session_state: st.session_state.estado_estacion = 'Todas'
-
-def reset_filtros():
-    st.session_state.estado_depto = 'Todos'
-    st.session_state.estado_estacion = 'Todas'
-    st.session_state['sb_depto'] = 'Todos'
-    st.session_state['sb_estacion'] = 'Todas'
-    if 'years_select' in st.session_state: del st.session_state['years_select']
-    st.session_state.sb_m_ini = 'Enero'
-    st.session_state.sb_m_fin = 'Diciembre'
 
 def normalizar_texto(texto):
     if pd.isna(texto): return ""
@@ -103,13 +75,9 @@ def cargar_datos():
         cols_num = ['Temp_Max', 'Temp_Min', 'Temp_Media', 'Precipitacion', 'Humedad']
         df_final[cols_num] = df_final[cols_num].apply(pd.to_numeric, errors='coerce')
         
-        # MEJORA #1: Reemplazo más eficiente de ceros por NaN
         cols_no_cero = ['Temp_Max', 'Temp_Min', 'Temp_Media', 'Humedad']
-        df_final[cols_no_cero] = df_final[cols_no_cero].replace(0, np.nan)
-        
-        # MEJORA #2: Validación de datos vacíos
-        if df_final.empty:
-            raise ValueError("Los archivos no contienen datos válidos después del procesamiento")
+        for col in cols_no_cero:
+            df_final.loc[df_final[col] == 0, col] = np.nan
             
         return df_final.sort_values('FECHA')
     except Exception as e:
@@ -118,40 +86,74 @@ def cargar_datos():
 
 df = cargar_datos()
 
+# CALCULAMOS LOS AÑOS DISPONIBLES AQUÍ PARA USARLOS EN EL RESET
+años_disp = sorted([int(x) for x in df['Año'].dropna().unique().tolist()], reverse=True)
+
 # -----------------------------------------------------------------------------
-# 4. PANEL LATERAL
+# 3. LÓGICA DE FILTROS Y RESET (CORREGIDO)
+# -----------------------------------------------------------------------------
+if 'estado_depto' not in st.session_state: st.session_state.estado_depto = 'Todos'
+
+def reset_filtros():
+    # Reseteamos valores visuales forzando la Session State
+    st.session_state['sb_depto'] = 'Todos'
+    st.session_state['sb_estacion'] = 'Todas'
+    # Forzamos que los años vuelvan al más reciente (Corrección del bug "fijo")
+    st.session_state['years_select'] = [años_disp[0]]
+    st.session_state.sb_m_ini = 'Enero'
+    st.session_state.sb_m_fin = 'Diciembre'
+    st.session_state.estado_depto = 'Todos'
+
+# -----------------------------------------------------------------------------
+# 4. HEADER
+# -----------------------------------------------------------------------------
+st.markdown("<h1 style='text-align: center; color: white;'>🇬🇹 Sistema de Monitoreo Climático - INSIVUMEH</h1>", unsafe_allow_html=True)
+
+st.markdown("""
+<div style="text-align: center; margin-top: -10px; margin-bottom: 15px;">
+<p style="color: white; font-size: 1rem; margin-bottom: 5px;">Realizado por:</p>
+<div style="color: #00f2ff; font-size: 1.6rem; font-weight: bold; text-shadow: 0 0 10px #00f2ff, 0 0 20px #00f2ff; margin-bottom: 10px;">José Esquina</div>
+<a href="https://www.linkedin.com/in/jose-esquina-0350aa159" target="_blank" style="text-decoration: none; color: white; border: 1px solid #00f2ff; padding: 6px 18px; border-radius: 25px; font-weight: bold; display: inline-block; margin-bottom: 10px; transition: 0.3s;">🔗 Contactar en LinkedIn</a>
+<p style="color: #cccccc; font-size: 0.9rem;"><b>AgroDATA</b> | Especialista en Investigación Agrícola | Python & GIS | Enfocado en Agricultura de Precisión</p>
+</div>
+<hr>
+""", unsafe_allow_html=True)
+
+# -----------------------------------------------------------------------------
+# 5. PANEL LATERAL (LÓGICA SIMPLIFICADA)
 # -----------------------------------------------------------------------------
 st.sidebar.header("🎛️ Panel de Control")
 if st.sidebar.button("🧹 RESTAURAR TODO"):
     reset_filtros()
     st.rerun()
 
+# 1. DEPARTAMENTO (Con lógica de reinicio de estación)
 deptos = ['Todos'] + sorted(df['Departamento'].unique().tolist())
-idx_depto = deptos.index(st.session_state.estado_depto) if st.session_state.estado_depto in deptos else 0
+# Recuperamos índice seguro
+try: idx_depto = deptos.index(st.session_state.sb_depto) if 'sb_depto' in st.session_state else 0
+except: idx_depto = 0
+
 depto_selec = st.sidebar.selectbox("1. Departamento", deptos, index=idx_depto, key='sb_depto')
 
+# Si cambia el depto, reseteamos la estación y recargamos
 if depto_selec != st.session_state.estado_depto:
     st.session_state.estado_depto = depto_selec
-    st.session_state.estado_estacion = 'Todas'
-    if 'sb_estacion' in st.session_state: del st.session_state['sb_estacion']
+    st.session_state['sb_estacion'] = 'Todas' # Forzamos reset del hijo
     st.rerun()
 
-estaciones_disp = ['Todas'] + sorted(df[df['Departamento'] == depto_selec]['NOMBRE_ESTACIÓN'].unique().tolist()) if depto_selec != 'Todos' else ['Todas'] + sorted(df['NOMBRE_ESTACIÓN'].unique().tolist())
-idx_est = estaciones_disp.index(st.session_state.estado_estacion) if st.session_state.estado_estacion in estaciones_disp else 0
-estacion_selec = st.sidebar.selectbox("2. Estación", estaciones_disp, index=idx_est, key='sb_estacion')
+# 2. ESTACIÓN (Lógica directa para evitar "doble clic")
+if depto_selec != 'Todos':
+    estaciones_disp = ['Todas'] + sorted(df[df['Departamento'] == depto_selec]['NOMBRE_ESTACIÓN'].unique().tolist())
+else:
+    estaciones_disp = ['Todas'] + sorted(df['NOMBRE_ESTACIÓN'].unique().tolist())
 
-if estacion_selec != st.session_state.estado_estacion:
-    st.session_state.estado_estacion = estacion_selec
-    st.rerun()
+estacion_selec = st.sidebar.selectbox("2. Estación", estaciones_disp, key='sb_estacion')
+# NOTA: Ya no forzamos rerun aquí, dejamos que Streamlit fluya natural.
 
 st.sidebar.markdown("---")
-años_disp = sorted([int(x) for x in df['Año'].dropna().unique().tolist()], reverse=True)
-años_selec = st.sidebar.multiselect("Años", años_disp, default=años_disp[:1], key='years_select')
 
-# MEJORA #3: Validación de años seleccionados
-if not años_selec:
-    st.sidebar.warning("⚠️ Selecciona al menos 1 año para continuar")
-    st.stop()
+# 3. TIEMPO
+años_selec = st.sidebar.multiselect("Años", años_disp, default=[años_disp[0]], key='years_select')
 
 col_m1, col_m2 = st.sidebar.columns(2)
 mes_inicio = col_m1.selectbox("Desde", ORDEN_MESES, index=0, key='sb_m_ini')
@@ -159,6 +161,7 @@ mes_fin = col_m2.selectbox("Hasta", ORDEN_MESES, index=11, key='sb_m_fin')
 mes_inicio_num = ORDEN_MESES.index(mes_inicio) + 1
 mes_fin_num = ORDEN_MESES.index(mes_fin) + 1
 
+# FILTRADO
 mask = pd.Series(True, index=df.index)
 if depto_selec != 'Todos': mask &= (df['Departamento'] == depto_selec)
 if estacion_selec != 'Todas': mask &= (df['NOMBRE_ESTACIÓN'] == estacion_selec)
@@ -171,7 +174,7 @@ else:
 df_filtrado = df[mask].copy()
 
 # -----------------------------------------------------------------------------
-# 5. GRAFICACIÓN
+# 6. VISUALIZACIÓN
 # -----------------------------------------------------------------------------
 def plot_barras(data, x, y, titulo, color_hex):
     fig = px.bar(data, x=x, y=y, title=titulo, color_discrete_sequence=[color_hex], 
@@ -181,7 +184,6 @@ def plot_barras(data, x, y, titulo, color_hex):
     return fig
 
 def plot_linea(data, x, y, titulo, color_hex):
-    # Gráfica limpia MENSUAL
     fig = px.line(data, x=x, y=y, title=titulo, markers=True, color_discrete_sequence=[color_hex], 
                   template='plotly_dark', category_orders={x: ORDEN_MESES},
                   labels={x: "Mes", y: "Temperatura (°C)"})
@@ -189,9 +191,6 @@ def plot_linea(data, x, y, titulo, color_hex):
     fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(t=40, b=20))
     return fig
 
-# -----------------------------------------------------------------------------
-# 6. VISUALIZACIÓN
-# -----------------------------------------------------------------------------
 tab_resumen, tab_comp = st.tabs(["📊 RESUMEN GENERAL & MAPA", "🆚 COMPARATIVA ANUAL"])
 
 with tab_resumen:
@@ -221,7 +220,6 @@ with tab_resumen:
             st.plotly_chart(plot_barras(df_lluvia, 'Mes_Nombre', 'Precipitacion', "🌧️ Precipitación Mensual", "#00e6e6"), use_container_width=True)
         
         with col_g2:
-            # Gráfica corregida: Promedio Mensual
             df_temp = df_filtrado.groupby(['Mes_Nombre'], observed=False)['Temp_Media'].mean().reset_index()
             st.plotly_chart(plot_linea(df_temp, 'Mes_Nombre', 'Temp_Media', "🌡️ Temperatura Media Mensual", "#ffe600"), use_container_width=True)
 
@@ -235,7 +233,7 @@ with tab_resumen:
         st.plotly_chart(fig_h, use_container_width=True)
 
         st.markdown("---")
-        st.subheader("📍 Ubicación Geográfica de las Estaciones (Interactiva)")
+        st.subheader("📍 Ubicación Geográfica")
         
         if depto_selec != 'Todos':
             df_mapa = df[df['Departamento'] == depto_selec].groupby(['NOMBRE_ESTACIÓN', 'Latitud', 'Longitud', 'Departamento']).agg({'Precipitacion': 'sum'}).reset_index()
@@ -243,9 +241,8 @@ with tab_resumen:
         else:
             df_mapa = df.groupby(['NOMBRE_ESTACIÓN', 'Latitud', 'Longitud', 'Departamento']).agg({'Precipitacion': 'sum'}).reset_index()
             zoom_ini = 6.5
-        
-        # MEJORA #4: Color duplicado corregido    
-        neon_palette = ['#ff00ff', '#00ff00', '#00e6e6', '#ff4500', '#00bfff', '#9400d3', '#ff1493', '#00fa9a', '#ffc400', '#ADFF2F']
+            
+        neon_palette = ['#ff00ff', '#00ff00', '#e6e600', '#ff4500', '#00bfff', '#9400d3', '#ff1493', '#00fa9a', '#ffc400', '#ADFF2F']
         deptos_unicos = sorted(df_mapa['Departamento'].unique())
         color_map_deptos = {depto: neon_palette[i % len(neon_palette)] for i, depto in enumerate(deptos_unicos)}
         
@@ -264,12 +261,11 @@ with tab_resumen:
             depto_click = punto['customdata'][1]
             if estacion_click != st.session_state.estado_estacion:
                 st.session_state.estado_depto = depto_click
-                st.session_state.estado_estacion = estacion_click
-                if 'sb_depto' in st.session_state: del st.session_state['sb_depto']
-                if 'sb_estacion' in st.session_state: del st.session_state['sb_estacion']
+                # IMPORTANTE: Forzamos update del widget 'sb_estacion' también
+                st.session_state['sb_depto'] = depto_click
+                st.session_state['sb_estacion'] = estacion_click
                 st.rerun()
 
-        # --- TABLA RESTAURADA CON BARRA DE PROGRESO ---
         with st.expander("📋 Ver Tabla de Datos Crudos"):
             st.dataframe(
                 df_filtrado[['FECHA', 'NOMBRE_ESTACIÓN', 'Temp_Max', 'Temp_Min', 'Temp_Media', 'Precipitacion', 'Humedad']], 
@@ -289,33 +285,14 @@ with tab_comp:
     if len(años_selec) < 2:
         st.info("💡 Selecciona al menos 2 años para comparar.")
     else:
-        df_c = df_filtrado.groupby(['Año', 'Mes_Nombre'], observed=False).agg({
-            'Precipitacion':'sum', 
-            'Temp_Media':'mean', 
-            'Humedad':'mean'
-        }).reset_index()
+        df_c = df_filtrado.groupby(['Año', 'Mes_Nombre'], observed=False).agg({'Precipitacion':'sum', 'Temp_Media':'mean', 'Humedad':'mean'}).reset_index()
         df_c['Año'] = df_c['Año'].astype(str)
-        
         c1, c2 = st.columns(2)
         with c1: 
-            st.plotly_chart(px.line(df_c, x='Mes_Nombre', y='Precipitacion', color='Año', 
-                                   title="🌧️ Lluvias Comparativas", template='plotly_dark', 
-                                   category_orders={"Mes_Nombre": ORDEN_MESES},
-                                   labels={"Mes_Nombre": "Mes"}), 
-                          use_container_width=True)
+            st.plotly_chart(px.line(df_c, x='Mes_Nombre', y='Precipitacion', color='Año', title="🌧️ Lluvias Comparativas", template='plotly_dark', category_orders={"Mes_Nombre": ORDEN_MESES}), use_container_width=True)
         with c2: 
-            st.plotly_chart(px.line(df_c, x='Mes_Nombre', y='Temp_Media', color='Año', 
-                                   title="🌡️ Temperaturas Comparativas", template='plotly_dark', 
-                                   category_orders={"Mes_Nombre": ORDEN_MESES},
-                                   labels={"Mes_Nombre": "Mes"}), 
-                          use_container_width=True)
-        
-        st.plotly_chart(px.bar(df_c, x='Mes_Nombre', y='Humedad', color='Año', barmode='group', 
-                              title="💨 Humedad Comparativa", template='plotly_dark', 
-                              category_orders={"Mes_Nombre": ORDEN_MESES},
-                              labels={"Mes_Nombre": "Mes"}), 
-                       use_container_width=True)
-
+            st.plotly_chart(px.line(df_c, x='Mes_Nombre', y='Temp_Media', color='Año', title="🌡️ Temperaturas Comparativas", template='plotly_dark', category_orders={"Mes_Nombre": ORDEN_MESES}), use_container_width=True)
+        st.plotly_chart(px.bar(df_c, x='Mes_Nombre', y='Humedad', color='Año', barmode='group', title="💨 Humedad Comparativa", template='plotly_dark', category_orders={"Mes_Nombre": ORDEN_MESES}), use_container_width=True)
 
 
 
