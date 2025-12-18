@@ -37,7 +37,7 @@ st.markdown("""
     div[data-testid="stMetricLabel"] p { color: #9ca3af !important; font-weight: 600; font-size: 13px; }
     div[data-testid="stMetricValue"] div { color: #ffffff !important; font-size: 26px !important; font-weight: bold; text-shadow: 0 0 8px rgba(0, 230, 230, 0.4); }
 
-    /* HEADER DE ESTACIÓN - (Ajustado para mostrar más info) */
+    /* HEADER DE ESTACIÓN */
     .active-station-header {
         background-color: #1f2937;
         border: 1px solid #00e6e6;
@@ -70,40 +70,53 @@ st.markdown("""
     }
     
     h1, h2, h3 { color: #ffffff; }
-    
-    /* FIRMA DEL AUTOR */
-    .author-text {
-        text-align: center;
-        color: #888;
-        font-size: 14px;
-        margin-top: -20px;
-        margin-bottom: 20px;
-    }
     </style>
     """, unsafe_allow_html=True)
 
-# --- TÍTULO Y FIRMA ---
-st.title("🇬🇹 Sistema de Monitoreo Climático - INSIVUMEH")
+# -----------------------------------------------------------------------------
+# --- HEADER PRINCIPAL (TITULO CENTRADO + FIRMA + BOTÓN) ---
+# -----------------------------------------------------------------------------
 
-# Bloque de autoría centrado con estilo neón y link a LinkedIn
+# 1. Título Centrado con HTML
+st.markdown("<h1 style='text-align: center; color: white;'>🇬🇹 Sistema de Monitoreo Climático - INSIVUMEH</h1>", unsafe_allow_html=True)
+
+# 2. Bloque de Autoría + Botón LinkedIn
 st.markdown(
     """
-    <div style="text-align: center; margin-top: -20px; margin-bottom: 15px;">
+    <div style="text-align: center; margin-top: -10px; margin-bottom: 15px;">
         <p style="color: white; font-size: 1rem; margin-bottom: 5px;">
             Realizado por:
         </p>
-        <a href="https://www.linkedin.com/in/jose-esquina-0350aa159" target="_blank" style="
-            text-decoration: none;
+        
+        <div style="
             color: #00f2ff;
-            font-size: 1.4rem;
+            font-size: 1.5rem;
             font-weight: bold;
             text-shadow: 0 0 10px #00f2ff, 0 0 20px #00f2ff;
+            margin-bottom: 10px;
         ">
             José Esquina
+        </div>
+
+        <a href="https://www.linkedin.com/in/jose-esquina-0350aa159" target="_blank" style="
+            background-color: transparent;
+            border: 1px solid #00f2ff;
+            color: white;
+            padding: 6px 18px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: bold;
+            display: inline-block;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+        ">
+            🔗 Contactar en LinkedIn
         </a>
-        <p style="color: #cccccc; font-size: 0.9rem; margin-top: 8px;">
-    <b>AgroDATA</b> | Especialista en Investigación Agrícola | Python & GIS | Enfocado en Agricultura de Precisión
-</p>
+
+        <p style="color: #cccccc; font-size: 0.9rem; margin-top: 10px;">
+            <b>AgroDATA</b> | Especialista en Investigación Agrícola | Python & GIS | Enfocado en Agricultura de Precisión
+        </p>
     </div>
     """,
     unsafe_allow_html=True
@@ -112,24 +125,17 @@ st.markdown(
 st.markdown("---")
 
 # -----------------------------------------------------------------------------
-# 2. GESTIÓN DE ESTADO (AQUÍ ESTÁ LA CORRECCIÓN DEL BOTÓN)
+# 2. GESTIÓN DE ESTADO
 # -----------------------------------------------------------------------------
 if 'estado_depto' not in st.session_state: st.session_state.estado_depto = 'Todos'
 if 'estado_estacion' not in st.session_state: st.session_state.estado_estacion = 'Todas'
 
 def reset_filtros():
-    # 1. Resetear variables lógicas internas
     st.session_state.estado_depto = 'Todos'
     st.session_state.estado_estacion = 'Todas'
-    
-    # 2. FORZAR VISUALMENTE LOS SELECTORES (Esto arregla el error de que no se actualizan)
     st.session_state['sb_depto'] = 'Todos'
     st.session_state['sb_estacion'] = 'Todas'
-    
-    # 3. Para el Multiselect (Años), borrar la llave funciona mejor para que tome el 'default'
     if 'years_select' in st.session_state: del st.session_state['years_select']
-    
-    # 4. Resetear meses
     st.session_state.sb_m_ini = 'Enero'
     st.session_state.sb_m_fin = 'Diciembre'
 
@@ -137,7 +143,6 @@ def reset_filtros():
 # 3. FUNCIONES AUXILIARES
 # -----------------------------------------------------------------------------
 def normalizar_texto(texto):
-    """Quita tildes y normaliza texto para cruce de datos exacto."""
     if pd.isna(texto): return ""
     texto = str(texto).strip().upper()
     texto = ''.join(c for c in unicodedata.normalize('NFD', texto) if unicodedata.category(c) != 'Mn')
@@ -213,7 +218,6 @@ except: idx_depto = 0
 
 depto_selec = st.sidebar.selectbox("1. Departamento", deptos, index=idx_depto, key='sb_depto')
 
-# Lógica de actualización de estado
 if depto_selec != st.session_state.estado_depto:
     st.session_state.estado_depto = depto_selec
     st.session_state.estado_estacion = 'Todas'
@@ -274,19 +278,31 @@ def plot_barras(data, x, y, titulo, color_hex):
 
 
 def plot_linea(data, x, y, titulo, color_hex):
-    # Se corrige para que x sea "Mes" si se agrupan los datos por mes, o "Fecha" si son diarios.
-    # Para que se vea profesional y sin años extra, se personaliza el eje X.
+    # Generamos la gráfica básica
     fig = px.line(data, x=x, y=y, title=titulo, markers=True, color_discrete_sequence=[color_hex], 
-                  template='plotly_dark', category_orders={x: ORDEN_MESES},
-                  labels={x: "Mes"}) # Forzamos la etiqueta 'Mes'
+                  template='plotly_dark',
+                  labels={x: "Mes"}) # Forzamos que la etiqueta del eje diga "Mes"
     
     fig.update_traces(connectgaps=False) 
     
-    # Truco PRO: Si el eje es fecha, forzamos formato limpio
-    if x == 'FECHA':
+    # --- CORRECCIÓN DE FECHAS A ESPAÑOL Y LIMPIEZA ---
+    if x == 'FECHA' and not data.empty:
+        # Encontramos el primer día de cada mes presente
+        fechas_ticks = data.groupby(['Año', 'Mes_Num'])[x].min().sort_values()
+        
+        # Mapeamos a nombres en español
+        nombres_ticks = [ORDEN_MESES[d.month - 1] for d in fechas_ticks]
+        
+        # Si hay varios años, agregamos el año (Ej: Enero 23)
+        if data['Año'].nunique() > 1:
+            nombres_ticks = [f"{ORDEN_MESES[d.month - 1]} {str(d.year)[-2:]}" for d in fechas_ticks]
+
+        # Aplicamos al eje X
         fig.update_xaxes(
-            tickformat="%d-%b", # Muestra día y mes (ej: 01-Jan)
-            showgrid=True
+            tickmode = 'array',
+            tickvals = fechas_ticks,
+            ticktext = nombres_ticks,
+            range = [data[x].min(), data[x].max()] # ELIMINA espacio extra
         )
 
     fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(t=40, b=20))
@@ -298,10 +314,7 @@ tab_resumen, tab_comp = st.tabs(["📊 RESUMEN GENERAL & MAPA", "🆚 COMPARATIV
 # === PESTAÑA 1: RESUMEN GENERAL ===
 with tab_resumen:
     
-    # -------------------------------------------------------
-    # LOGICA DE ENCABEZADO CON AÑO (ACTUALIZADO)
-    # -------------------------------------------------------
-    # Preparar el texto de los años seleccionados
+    # Header dinámico
     if años_selec:
         anios_str = ", ".join(map(str, sorted(años_selec)))
     else:
@@ -311,7 +324,6 @@ with tab_resumen:
         try: depto_actual = df[df['NOMBRE_ESTACIÓN'] == estacion_selec]['Departamento'].iloc[0]
         except: depto_actual = depto_selec
         
-       
         st.markdown(f"""
             <div class="active-station-header">
                 📡 ESTACIÓN: {estacion_selec} <span style="color:white">|</span> 
@@ -326,7 +338,6 @@ with tab_resumen:
                 📅 AÑO: {anios_str}
             </div>
             """, unsafe_allow_html=True)
-    # -------------------------------------------------------
 
     if df_filtrado.empty:
         st.warning("⚠️ No hay datos disponibles con los filtros actuales.")
@@ -345,7 +356,7 @@ with tab_resumen:
             df_l = df_filtrado.groupby(['Mes_Nombre'], observed=False)['Precipitacion'].sum().reset_index()
             st.plotly_chart(plot_barras(df_l, 'Mes_Nombre', 'Precipitacion', "🌧️ Precipitación Mensual", "#00e6e6"), use_container_width=True)
         with col_top2:
-            # Aquí usamos FECHA para mostrar la evolución diaria, pero con la etiqueta "Mes" corregida
+            # Gráfica corregida
             df_temp_sorted = df_filtrado.sort_values('FECHA')
             st.plotly_chart(plot_linea(df_temp_sorted, 'FECHA', 'Temp_Media', "🌡️ Evolución Temperatura", "#ffe600"), use_container_width=True)
 
@@ -359,7 +370,7 @@ with tab_resumen:
         fig_h.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', yaxis_range=[0, 100])
         st.plotly_chart(fig_h, use_container_width=True)
 
-        # --- MAPA INTERACTIVO ---
+        # MAPA
         st.markdown("---")
         st.subheader("📍 Ubicación Geográfica (Interactiva)")
         st.caption("Haz clic en cualquier estación para filtrar. Los colores indican la estación.")
@@ -404,7 +415,6 @@ with tab_resumen:
             if estacion_click != st.session_state.estado_estacion:
                 st.session_state.estado_depto = depto_click
                 st.session_state.estado_estacion = estacion_click
-                # Limpiar para forzar actualización
                 if 'sb_depto' in st.session_state: del st.session_state['sb_depto']
                 if 'sb_estacion' in st.session_state: del st.session_state['sb_estacion']
                 st.rerun()
