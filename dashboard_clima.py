@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import numpy as np
-import unicodedata 
+import unicodedata
 
 # -----------------------------------------------------------------------------
 # 1. CONFIGURACIÓN Y ESTILOS (NEÓN PRO)
@@ -84,7 +84,31 @@ st.markdown("""
 
 # --- TÍTULO Y FIRMA ---
 st.title("🇬🇹 Sistema de Monitoreo Climático - INSIVUMEH")
-st.markdown('<p class="author-text">Realizado por: <b>José Esquina</b> | Correo: <a href="mailto:makarioe@gmail.com" style="color:#00e6e6; text-decoration:none;">makarioe@gmail.com</a></p>', unsafe_allow_html=True)
+
+# Bloque de autoría centrado con estilo neón y link a LinkedIn
+st.markdown(
+    """
+    <div style="text-align: center; margin-top: -20px; margin-bottom: 15px;">
+        <p style="color: white; font-size: 1rem; margin-bottom: 5px;">
+            Realizado por:
+        </p>
+        <a href="https://www.linkedin.com/in/jose-esquina-0350aa159" target="_blank" style="
+            text-decoration: none;
+            color: #00f2ff;
+            font-size: 1.4rem;
+            font-weight: bold;
+            text-shadow: 0 0 10px #00f2ff, 0 0 20px #00f2ff;
+        ">
+            José Esquina
+        </a>
+        <p style="color: #cccccc; font-size: 0.9rem; margin-top: 8px;">
+    <b>AgroDATA</b> | Especialista en Investigación Agrícola | Python & GIS | Enfocado en Agricultura de Precisión
+</p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
 st.markdown("---")
 
 # -----------------------------------------------------------------------------
@@ -248,11 +272,23 @@ def plot_barras(data, x, y, titulo, color_hex):
     fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(t=40, b=20))
     return fig
 
+
 def plot_linea(data, x, y, titulo, color_hex):
+    # Se corrige para que x sea "Mes" si se agrupan los datos por mes, o "Fecha" si son diarios.
+    # Para que se vea profesional y sin años extra, se personaliza el eje X.
     fig = px.line(data, x=x, y=y, title=titulo, markers=True, color_discrete_sequence=[color_hex], 
                   template='plotly_dark', category_orders={x: ORDEN_MESES},
-                  labels={x: "Mes", "FECHA": "Fecha"})
+                  labels={x: "Mes"}) # Forzamos la etiqueta 'Mes'
+    
     fig.update_traces(connectgaps=False) 
+    
+    # Truco PRO: Si el eje es fecha, forzamos formato limpio
+    if x == 'FECHA':
+        fig.update_xaxes(
+            tickformat="%d-%b", # Muestra día y mes (ej: 01-Jan)
+            showgrid=True
+        )
+
     fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(t=40, b=20))
     return fig
 
@@ -275,7 +311,7 @@ with tab_resumen:
         try: depto_actual = df[df['NOMBRE_ESTACIÓN'] == estacion_selec]['Departamento'].iloc[0]
         except: depto_actual = depto_selec
         
-        # AQUÍ ESTÁ EL CAMBIO QUE PEDISTE: AGREGADO EL AÑO AL FINAL
+       
         st.markdown(f"""
             <div class="active-station-header">
                 📡 ESTACIÓN: {estacion_selec} <span style="color:white">|</span> 
@@ -309,6 +345,7 @@ with tab_resumen:
             df_l = df_filtrado.groupby(['Mes_Nombre'], observed=False)['Precipitacion'].sum().reset_index()
             st.plotly_chart(plot_barras(df_l, 'Mes_Nombre', 'Precipitacion', "🌧️ Precipitación Mensual", "#00e6e6"), use_container_width=True)
         with col_top2:
+            # Aquí usamos FECHA para mostrar la evolución diaria, pero con la etiqueta "Mes" corregida
             df_temp_sorted = df_filtrado.sort_values('FECHA')
             st.plotly_chart(plot_linea(df_temp_sorted, 'FECHA', 'Temp_Media', "🌡️ Evolución Temperatura", "#ffe600"), use_container_width=True)
 
@@ -430,4 +467,5 @@ with tab_comp:
             category_orders={"Mes_Nombre": ORDEN_MESES},
             labels={'Mes_Nombre': 'Mes', 'Humedad': 'Humedad (%)'}
         )
+
         st.plotly_chart(fig_hum_comp, use_container_width=True)
