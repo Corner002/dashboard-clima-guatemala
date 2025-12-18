@@ -39,7 +39,7 @@ h1, h2, h3 { color: #ffffff; }
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# 2. CARGA DE DATOS (MOVIDO AL INICIO PARA EVITAR ERRORES DE LOGICA)
+# 2. CARGA DE DATOS (ORDEN CORRECTO PARA QUE EL RESET FUNCIONE)
 # -----------------------------------------------------------------------------
 ORDEN_MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
 
@@ -86,19 +86,18 @@ def cargar_datos():
 
 df = cargar_datos()
 
-# CALCULAMOS LOS AÑOS DISPONIBLES AQUÍ PARA USARLOS EN EL RESET
+# Lista de años calculada ANTES de usarla en reset
 años_disp = sorted([int(x) for x in df['Año'].dropna().unique().tolist()], reverse=True)
 
 # -----------------------------------------------------------------------------
-# 3. LÓGICA DE FILTROS Y RESET (CORREGIDO)
+# 3. LÓGICA DE FILTROS Y RESET
 # -----------------------------------------------------------------------------
 if 'estado_depto' not in st.session_state: st.session_state.estado_depto = 'Todos'
 
 def reset_filtros():
-    # Reseteamos valores visuales forzando la Session State
     st.session_state['sb_depto'] = 'Todos'
     st.session_state['sb_estacion'] = 'Todas'
-    # Forzamos que los años vuelvan al más reciente (Corrección del bug "fijo")
+    # Corrección del bug de años: forzamos la lista de selección al valor por defecto
     st.session_state['years_select'] = [años_disp[0]]
     st.session_state.sb_m_ini = 'Enero'
     st.session_state.sb_m_fin = 'Diciembre'
@@ -120,39 +119,36 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# 5. PANEL LATERAL (LÓGICA SIMPLIFICADA)
+# 5. PANEL LATERAL
 # -----------------------------------------------------------------------------
 st.sidebar.header("🎛️ Panel de Control")
 if st.sidebar.button("🧹 RESTAURAR TODO"):
     reset_filtros()
     st.rerun()
 
-# 1. DEPARTAMENTO (Con lógica de reinicio de estación)
+# Depto
 deptos = ['Todos'] + sorted(df['Departamento'].unique().tolist())
-# Recuperamos índice seguro
 try: idx_depto = deptos.index(st.session_state.sb_depto) if 'sb_depto' in st.session_state else 0
 except: idx_depto = 0
 
 depto_selec = st.sidebar.selectbox("1. Departamento", deptos, index=idx_depto, key='sb_depto')
 
-# Si cambia el depto, reseteamos la estación y recargamos
 if depto_selec != st.session_state.estado_depto:
     st.session_state.estado_depto = depto_selec
-    st.session_state['sb_estacion'] = 'Todas' # Forzamos reset del hijo
+    st.session_state['sb_estacion'] = 'Todas'
     st.rerun()
 
-# 2. ESTACIÓN (Lógica directa para evitar "doble clic")
+# Estación
 if depto_selec != 'Todos':
     estaciones_disp = ['Todas'] + sorted(df[df['Departamento'] == depto_selec]['NOMBRE_ESTACIÓN'].unique().tolist())
 else:
     estaciones_disp = ['Todas'] + sorted(df['NOMBRE_ESTACIÓN'].unique().tolist())
 
 estacion_selec = st.sidebar.selectbox("2. Estación", estaciones_disp, key='sb_estacion')
-# NOTA: Ya no forzamos rerun aquí, dejamos que Streamlit fluya natural.
 
 st.sidebar.markdown("---")
 
-# 3. TIEMPO
+# Tiempo
 años_selec = st.sidebar.multiselect("Años", años_disp, default=[años_disp[0]], key='years_select')
 
 col_m1, col_m2 = st.sidebar.columns(2)
@@ -161,7 +157,7 @@ mes_fin = col_m2.selectbox("Hasta", ORDEN_MESES, index=11, key='sb_m_fin')
 mes_inicio_num = ORDEN_MESES.index(mes_inicio) + 1
 mes_fin_num = ORDEN_MESES.index(mes_fin) + 1
 
-# FILTRADO
+# Filtros
 mask = pd.Series(True, index=df.index)
 if depto_selec != 'Todos': mask &= (df['Departamento'] == depto_selec)
 if estacion_selec != 'Todas': mask &= (df['NOMBRE_ESTACIÓN'] == estacion_selec)
@@ -261,7 +257,6 @@ with tab_resumen:
             depto_click = punto['customdata'][1]
             if estacion_click != st.session_state.estado_estacion:
                 st.session_state.estado_depto = depto_click
-                # IMPORTANTE: Forzamos update del widget 'sb_estacion' también
                 st.session_state['sb_depto'] = depto_click
                 st.session_state['sb_estacion'] = estacion_click
                 st.rerun()
@@ -285,14 +280,31 @@ with tab_comp:
     if len(años_selec) < 2:
         st.info("💡 Selecciona al menos 2 años para comparar.")
     else:
-        df_c = df_filtrado.groupby(['Año', 'Mes_Nombre'], observed=False).agg({'Precipitacion':'sum', 'Temp_Media':'mean', 'Humedad':'mean'}).reset_index()
+        df_c = df_filtrado.groupby(['Año', 'Mes_Nombre'], observed=False).agg({
+            'Precipitacion':'sum', 
+            'Temp_Media':'mean', 
+            'Humedad':'mean'
+        }).reset_index()
         df_c['Año'] = df_c['Año'].astype(str)
+        
         c1, c2 = st.columns(2)
         with c1: 
-            st.plotly_chart(px.line(df_c, x='Mes_Nombre', y='Precipitacion', color='Año', title="🌧️ Lluvias Comparativas", template='plotly_dark', category_orders={"Mes_Nombre": ORDEN_MESES}), use_container_width=True)
+            st.plotly_chart(px.line(df_c, x='Mes_Nombre', y='Precipitacion', color='Año', 
+                                   title="🌧️ Lluvias Comparativas", template='plotly_dark', 
+                                   category_orders={"Mes_Nombre": ORDEN_MESES},
+                                   labels={"Mes_Nombre": "Mes"}), 
+                          use_container_width=True)
         with c2: 
-            st.plotly_chart(px.line(df_c, x='Mes_Nombre', y='Temp_Media', color='Año', title="🌡️ Temperaturas Comparativas", template='plotly_dark', category_orders={"Mes_Nombre": ORDEN_MESES}), use_container_width=True)
-        st.plotly_chart(px.bar(df_c, x='Mes_Nombre', y='Humedad', color='Año', barmode='group', title="💨 Humedad Comparativa", template='plotly_dark', category_orders={"Mes_Nombre": ORDEN_MESES}), use_container_width=True)
-
+            st.plotly_chart(px.line(df_c, x='Mes_Nombre', y='Temp_Media', color='Año', 
+                                   title="🌡️ Temperaturas Comparativas", template='plotly_dark', 
+                                   category_orders={"Mes_Nombre": ORDEN_MESES},
+                                   labels={"Mes_Nombre": "Mes"}), 
+                          use_container_width=True)
+        
+        st.plotly_chart(px.bar(df_c, x='Mes_Nombre', y='Humedad', color='Año', barmode='group', 
+                              title="💨 Humedad Comparativa", template='plotly_dark', 
+                              category_orders={"Mes_Nombre": ORDEN_MESES},
+                              labels={"Mes_Nombre": "Mes"}), 
+                       use_container_width=True)
 
 
