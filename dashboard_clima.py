@@ -90,20 +90,16 @@ años_disp = sorted([int(x) for x in df['Año'].dropna().unique().tolist()], rev
 # -----------------------------------------------------------------------------
 # 3. LÓGICA DE FILTROS Y RESET
 # -----------------------------------------------------------------------------
-# --- AQUÍ ESTABA EL ERROR: Faltaba inicializar estas variables ---
 if 'estado_depto' not in st.session_state: st.session_state.estado_depto = 'Todos'
 if 'estado_estacion' not in st.session_state: st.session_state.estado_estacion = 'Todas'
-# -----------------------------------------------------------------
 
 def reset_filtros():
-    # Reseteo visual (Selectbox)
     st.session_state['sb_depto'] = 'Todos'
     st.session_state['sb_estacion'] = 'Todas'
     st.session_state['years_select'] = [años_disp[0]]
     st.session_state.sb_m_ini = 'Enero'
     st.session_state.sb_m_fin = 'Diciembre'
     
-    # Reseteo interno (Para que el mapa y los filtros reaccionen)
     st.session_state.estado_depto = 'Todos'
     st.session_state.estado_estacion = 'Todas'
 
@@ -132,15 +128,15 @@ if st.sidebar.button("🧹 RESTAURAR TODO"):
 
 # Depto
 deptos = ['Todos'] + sorted(df['Departamento'].unique().tolist())
-# Recuperación segura del índice
-try: idx_depto = deptos.index(st.session_state.sb_depto) if 'sb_depto' in st.session_state else 0
+try: idx_depto = deptos.index(st.session_state.estado_depto) if st.session_state.estado_depto in deptos else 0
 except: idx_depto = 0
 
 depto_selec = st.sidebar.selectbox("1. Departamento", deptos, index=idx_depto, key='sb_depto')
 
 if depto_selec != st.session_state.estado_depto:
     st.session_state.estado_depto = depto_selec
-    st.session_state['sb_estacion'] = 'Todas'
+    st.session_state.estado_estacion = 'Todas'
+    if 'sb_estacion' in st.session_state: del st.session_state['sb_estacion']
     st.rerun()
 
 # Estación
@@ -149,7 +145,6 @@ if depto_selec != 'Todos':
 else:
     estaciones_disp = ['Todas'] + sorted(df['NOMBRE_ESTACIÓN'].unique().tolist())
 
-# Recuperación segura del índice para estación
 try: idx_est = estaciones_disp.index(st.session_state.estado_estacion) if st.session_state.estado_estacion in estaciones_disp else 0
 except: idx_est = 0
 
@@ -269,13 +264,16 @@ with tab_resumen:
             estacion_click = punto['customdata'][0]
             depto_click = punto['customdata'][1]
             
-            # --- AQUÍ EXPLOTABA EL CÓDIGO ANTES, AHORA ESTÁ ARREGLADO ---
             if estacion_click != st.session_state.estado_estacion:
                 st.session_state.estado_depto = depto_click
                 st.session_state.estado_estacion = estacion_click
-                # Forzamos actualización visual de los selectbox
-                st.session_state['sb_depto'] = depto_click
-                st.session_state['sb_estacion'] = estacion_click
+                
+                # --- SOLUCIÓN NUCLEAR AL ERROR APIEXCEPTION ---
+                # En lugar de asignar (que rompe el código), borramos la memoria del widget.
+                # Al recargar, Streamlit verá que no hay memoria y usará el nuevo índice que definimos arriba.
+                if 'sb_depto' in st.session_state: del st.session_state['sb_depto']
+                if 'sb_estacion' in st.session_state: del st.session_state['sb_estacion']
+                
                 st.rerun()
 
         with st.expander("📋 Ver Tabla de Datos Crudos"):
@@ -297,7 +295,6 @@ with tab_comp:
     if len(años_selec) < 2:
         st.info("💡 Selecciona al menos 2 años para comparar.")
     else:
-        # observed=True arregla las líneas planas
         df_c = df_filtrado.groupby(['Año', 'Mes_Nombre'], observed=True).agg({
             'Precipitacion':'sum', 
             'Temp_Media':'mean', 
