@@ -88,20 +88,23 @@ df = cargar_datos()
 años_disp = sorted([int(x) for x in df['Año'].dropna().unique().tolist()], reverse=True)
 
 # -----------------------------------------------------------------------------
-# 3. LÓGICA DE FILTROS Y RESET
+# 3. GESTIÓN DE ESTADO (Callbacks)
 # -----------------------------------------------------------------------------
-if 'estado_depto' not in st.session_state: st.session_state.estado_depto = 'Todos'
-if 'estado_estacion' not in st.session_state: st.session_state.estado_estacion = 'Todas'
+if 'sb_depto' not in st.session_state: st.session_state['sb_depto'] = 'Todos'
+if 'sb_estacion' not in st.session_state: st.session_state['sb_estacion'] = 'Todas'
+if 'years_select' not in st.session_state: st.session_state['years_select'] = [años_disp[0]]
+
+def al_cambiar_depto():
+    """Callback: Si cambia el depto, reseteamos la estación a 'Todas'."""
+    st.session_state['sb_estacion'] = 'Todas'
 
 def reset_filtros():
+    """Callback: Resetea todo a valores por defecto."""
     st.session_state['sb_depto'] = 'Todos'
     st.session_state['sb_estacion'] = 'Todas'
     st.session_state['years_select'] = [años_disp[0]]
     st.session_state.sb_m_ini = 'Enero'
     st.session_state.sb_m_fin = 'Diciembre'
-    
-    st.session_state.estado_depto = 'Todos'
-    st.session_state.estado_estacion = 'Todas'
 
 # -----------------------------------------------------------------------------
 # 4. HEADER
@@ -119,45 +122,32 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# 5. PANEL LATERAL
+# 5. PANEL LATERAL (Sin reruns manuales)
 # -----------------------------------------------------------------------------
 st.sidebar.header("🎛️ Panel de Control")
-if st.sidebar.button("🧹 RESTAURAR TODO"):
-    reset_filtros()
-    st.rerun()
+st.sidebar.button("🧹 RESTAURAR TODO", on_click=reset_filtros)
 
-# Depto
+# 1. DEPARTAMENTO
 deptos = ['Todos'] + sorted(df['Departamento'].unique().tolist())
-try: idx_depto = deptos.index(st.session_state.estado_depto) if st.session_state.estado_depto in deptos else 0
-except: idx_depto = 0
+# Usamos on_change para manejar la lógica de actualización
+depto_selec = st.sidebar.selectbox("1. Departamento", deptos, key='sb_depto', on_change=al_cambiar_depto)
 
-depto_selec = st.sidebar.selectbox("1. Departamento", deptos, index=idx_depto, key='sb_depto')
-
-if depto_selec != st.session_state.estado_depto:
-    st.session_state.estado_depto = depto_selec
-    st.session_state.estado_estacion = 'Todas'
-    if 'sb_estacion' in st.session_state: del st.session_state['sb_estacion']
-    st.rerun()
-
-# Estación
+# 2. ESTACIÓN
 if depto_selec != 'Todos':
     estaciones_disp = ['Todas'] + sorted(df[df['Departamento'] == depto_selec]['NOMBRE_ESTACIÓN'].unique().tolist())
 else:
     estaciones_disp = ['Todas'] + sorted(df['NOMBRE_ESTACIÓN'].unique().tolist())
 
-try: idx_est = estaciones_disp.index(st.session_state.estado_estacion) if st.session_state.estado_estacion in estaciones_disp else 0
-except: idx_est = 0
+# Aseguramos que la selección actual sea válida, si no, reset a 'Todas'
+if st.session_state['sb_estacion'] not in estaciones_disp:
+    st.session_state['sb_estacion'] = 'Todas'
 
-estacion_selec = st.sidebar.selectbox("2. Estación", estaciones_disp, index=idx_est, key='sb_estacion')
-
-if estacion_selec != st.session_state.estado_estacion:
-    st.session_state.estado_estacion = estacion_selec
-    st.rerun()
+estacion_selec = st.sidebar.selectbox("2. Estación", estaciones_disp, key='sb_estacion')
 
 st.sidebar.markdown("---")
 
-# Tiempo
-años_selec = st.sidebar.multiselect("Años", años_disp, default=[años_disp[0]], key='years_select')
+# 3. TIEMPO
+años_selec = st.sidebar.multiselect("Años", años_disp, key='years_select')
 
 col_m1, col_m2 = st.sidebar.columns(2)
 mes_inicio = col_m1.selectbox("Desde", ORDEN_MESES, index=0, key='sb_m_ini')
@@ -165,7 +155,7 @@ mes_fin = col_m2.selectbox("Hasta", ORDEN_MESES, index=11, key='sb_m_fin')
 mes_inicio_num = ORDEN_MESES.index(mes_inicio) + 1
 mes_fin_num = ORDEN_MESES.index(mes_fin) + 1
 
-# Filtros
+# FILTROS
 mask = pd.Series(True, index=df.index)
 if depto_selec != 'Todos': mask &= (df['Departamento'] == depto_selec)
 if estacion_selec != 'Todas': mask &= (df['NOMBRE_ESTACIÓN'] == estacion_selec)
@@ -201,13 +191,17 @@ with tab_resumen:
     anios_str = ", ".join(map(str, sorted(años_selec))) if años_selec else "Todos"
     
     if estacion_selec != 'Todas':
-        depto_actual = df[df['NOMBRE_ESTACIÓN'] == estacion_selec]['Departamento'].iloc[0]
-        st.markdown(f'<div class="active-station-header">📡 ESTACIÓN: {estacion_selec} | 📍 {depto_actual} | 📅 {anios_str}</div>', unsafe_allow_html=True)
+        try:
+            depto_actual = df[df['NOMBRE_ESTACIÓN'] == estacion_selec]['Departamento'].iloc[0]
+            header_text = f"📡 ESTACIÓN: {estacion_selec} | 📍 {depto_actual} | 📅 {anios_str}"
+        except:
+            header_text = f"📡 ESTACIÓN: {estacion_selec} | 📅 {anios_str}"
+        st.markdown(f'<div class="active-station-header">{header_text}</div>', unsafe_allow_html=True)
     else:
         st.markdown(f'<div class="active-station-header" style="border-color:#555; color:#aaa;">📡 TODAS LAS ESTACIONES ({depto_selec}) | 📅 {anios_str}</div>', unsafe_allow_html=True)
 
     if df_filtrado.empty:
-        st.warning("⚠️ No hay datos disponibles.")
+        st.warning("⚠️ No hay datos disponibles con los filtros actuales.")
     else:
         k1, k2, k3, k4, k5 = st.columns(5)
         k1.metric("💧 Lluvia Total", f"{df_filtrado['Precipitacion'].sum():,.1f} mm")
@@ -257,6 +251,7 @@ with tab_resumen:
         fig_map.update_traces(marker=dict(color=df_mapa['Color_Final'], size=df_mapa['Size_Final'], opacity=0.9, allowoverlap=True))
         fig_map.update_layout(clickmode='event+select', margin={"r":0,"t":0,"l":0,"b":0})
         
+        # --- LÓGICA DE CLIC EN MAPA (SIN ERROR APIEXCEPTION) ---
         event = st.plotly_chart(fig_map, on_select="rerun", selection_mode="points", use_container_width=True, key="mapa_main")
         
         if event and len(event['selection']['points']) > 0:
@@ -264,16 +259,10 @@ with tab_resumen:
             estacion_click = punto['customdata'][0]
             depto_click = punto['customdata'][1]
             
-            if estacion_click != st.session_state.estado_estacion:
-                st.session_state.estado_depto = depto_click
-                st.session_state.estado_estacion = estacion_click
-                
-                # --- SOLUCIÓN NUCLEAR AL ERROR APIEXCEPTION ---
-                # En lugar de asignar (que rompe el código), borramos la memoria del widget.
-                # Al recargar, Streamlit verá que no hay memoria y usará el nuevo índice que definimos arriba.
-                if 'sb_depto' in st.session_state: del st.session_state['sb_depto']
-                if 'sb_estacion' in st.session_state: del st.session_state['sb_estacion']
-                
+            # Solo actualizamos si es diferente para evitar loops
+            if estacion_click != st.session_state['sb_estacion']:
+                st.session_state['sb_depto'] = depto_click
+                st.session_state['sb_estacion'] = estacion_click
                 st.rerun()
 
         with st.expander("📋 Ver Tabla de Datos Crudos"):
