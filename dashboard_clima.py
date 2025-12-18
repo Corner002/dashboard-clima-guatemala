@@ -235,7 +235,7 @@ with tab_resumen:
         st.plotly_chart(fig_h, use_container_width=True)
 
         st.markdown("---")
-        st.subheader("📍 Ubicación Geográfica de las Estaciones Meteorológicas del INSIVUMEH ")
+        st.subheader("📍 Ubicación Geográfica de las Estaciones Meteorológicas")
         
         if depto_selec != 'Todos':
             df_mapa = df[df['Departamento'] == depto_selec].groupby(['NOMBRE_ESTACIÓN', 'Latitud', 'Longitud', 'Departamento']).agg({'Precipitacion': 'sum'}).reset_index()
@@ -315,4 +315,5 @@ with tab_comp:
                               category_orders={"Mes_Nombre": ORDEN_MESES},
                               labels={"Mes_Nombre": "Mes"}), 
                        use_container_width=True)
+
 
