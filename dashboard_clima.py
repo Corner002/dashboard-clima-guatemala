@@ -88,26 +88,38 @@ df = cargar_datos()
 años_disp = sorted([int(x) for x in df['Año'].dropna().unique().tolist()], reverse=True)
 
 # -----------------------------------------------------------------------------
-# 3. GESTIÓN DE ESTADO (CON TRUCO DE ID PARA EL MAPA)
+# 3. GESTIÓN DE ESTADO (SOLUCIÓN DEFINITIVA)
 # -----------------------------------------------------------------------------
-# Inicializamos variables
+# Inicializar variables si no existen
 if 'sb_depto' not in st.session_state: st.session_state['sb_depto'] = 'Todos'
 if 'sb_estacion' not in st.session_state: st.session_state['sb_estacion'] = 'Todas'
 if 'years_select' not in st.session_state: st.session_state['years_select'] = [años_disp[0]]
-# Esta es la clave: un contador que obliga al mapa a renovarse
-if 'map_reset_id' not in st.session_state: st.session_state['map_reset_id'] = 0
+# ID para controlar la "vida" del mapa. Si cambia, el mapa se resetea.
+if 'map_id' not in st.session_state: st.session_state['map_id'] = 0
 
-def forzar_renovacion_mapa():
-    """Si cambiamos el filtro lateral, aumentamos el ID para que el mapa se limpie."""
-    st.session_state['map_reset_id'] += 1
+# --- LÓGICA DE ESPEJO (MIRROR LOGIC) ---
+# Verificamos si hubo clic en el mapa ANTES de dibujar el sidebar
+map_key = f"mapa_main_{st.session_state['map_id']}"
+if map_key in st.session_state and st.session_state[map_key]:
+    selection = st.session_state[map_key]
+    if "selection" in selection and "points" in selection["selection"] and selection["selection"]["points"]:
+        point = selection["selection"]["points"][0]
+        # Actualizamos el estado para que el sidebar lo lea después
+        if point["customdata"][0] != st.session_state['sb_estacion']:
+            st.session_state['sb_depto'] = point["customdata"][1]
+            st.session_state['sb_estacion'] = point["customdata"][0]
 
-def reset_filtros():
+# Callback para limpiar el mapa si tocan el sidebar
+def reset_map_selection():
+    st.session_state['map_id'] += 1 # Cambiar el ID mata al mapa anterior y limpia la selección
+
+def reset_all():
     st.session_state['sb_depto'] = 'Todos'
     st.session_state['sb_estacion'] = 'Todas'
     st.session_state['years_select'] = [años_disp[0]]
     st.session_state.sb_m_ini = 'Enero'
     st.session_state.sb_m_fin = 'Diciembre'
-    st.session_state['map_reset_id'] += 1 # Limpia el mapa también
+    st.session_state['map_id'] += 1
 
 # -----------------------------------------------------------------------------
 # 4. HEADER
@@ -128,12 +140,11 @@ st.markdown("""
 # 5. PANEL LATERAL
 # -----------------------------------------------------------------------------
 st.sidebar.header("🎛️ Panel de Control")
-st.sidebar.button("🧹 RESTAURAR TODO", on_click=reset_filtros)
+st.sidebar.button("🧹 RESTAURAR TODO", on_click=reset_all)
 
 # 1. DEPARTAMENTO
 deptos = ['Todos'] + sorted(df['Departamento'].unique().tolist())
-# Cuando cambiamos depto, llamamos a forzar_renovacion_mapa
-depto_selec = st.sidebar.selectbox("1. Departamento", deptos, key='sb_depto', on_change=forzar_renovacion_mapa)
+depto_selec = st.sidebar.selectbox("1. Departamento", deptos, key='sb_depto', on_change=reset_map_selection)
 
 # 2. ESTACIÓN
 if depto_selec != 'Todos':
@@ -141,11 +152,11 @@ if depto_selec != 'Todos':
 else:
     estaciones_disp = ['Todas'] + sorted(df['NOMBRE_ESTACIÓN'].unique().tolist())
 
-# Validación de seguridad
+# Protección por si la estación seleccionada ya no existe en la lista nueva
 if st.session_state['sb_estacion'] not in estaciones_disp:
     st.session_state['sb_estacion'] = 'Todas'
 
-estacion_selec = st.sidebar.selectbox("2. Estación", estaciones_disp, key='sb_estacion', on_change=forzar_renovacion_mapa)
+estacion_selec = st.sidebar.selectbox("2. Estación", estaciones_disp, key='sb_estacion', on_change=reset_map_selection)
 
 st.sidebar.markdown("---")
 
@@ -255,22 +266,9 @@ with tab_resumen:
         fig_map.update_traces(marker=dict(color=df_mapa['Color_Final'], size=df_mapa['Size_Final'], opacity=0.9, allowoverlap=True))
         fig_map.update_layout(clickmode='event+select', margin={"r":0,"t":0,"l":0,"b":0})
         
-        # --- MAPA SEGURO: USAMOS EL ID DINÁMICO ---
-        # Si cambias el filtro, cambia el ID -> Se crea un mapa nuevo -> No hay error de asignación
-        map_key = f"mapa_main_{st.session_state['map_reset_id']}"
-        
-        event = st.plotly_chart(fig_map, on_select="rerun", selection_mode="points", use_container_width=True, key=map_key)
-        
-        if event and len(event['selection']['points']) > 0:
-            punto = event['selection']['points'][0]
-            estacion_click = punto['customdata'][0]
-            depto_click = punto['customdata'][1]
-            
-            # Actualizamos el sidebar solo si es necesario
-            if estacion_click != st.session_state['sb_estacion']:
-                st.session_state['sb_depto'] = depto_click
-                st.session_state['sb_estacion'] = estacion_click
-                st.rerun()
+        # --- MAPA CON ID DINÁMICO (LA CLAVE DEL ÉXITO) ---
+        # Al usar map_id en la key, obligamos a streamlit a redibujarlo limpio si cambia el filtro
+        st.plotly_chart(fig_map, on_select="rerun", selection_mode="points", use_container_width=True, key=f"mapa_main_{st.session_state['map_id']}")
 
         with st.expander("📋 Ver Tabla de Datos Crudos"):
             st.dataframe(
@@ -291,6 +289,7 @@ with tab_comp:
     if len(años_selec) < 2:
         st.info("💡 Selecciona al menos 2 años para comparar.")
     else:
+        # observed=True arregla las líneas planas
         df_c = df_filtrado.groupby(['Año', 'Mes_Nombre'], observed=True).agg({
             'Precipitacion':'sum', 
             'Temp_Media':'mean', 
@@ -320,3 +319,4 @@ with tab_comp:
                               category_orders={"Mes_Nombre": ORDEN_MESES},
                               labels={"Mes_Nombre": "Mes"}), 
                        use_container_width=True)
+
