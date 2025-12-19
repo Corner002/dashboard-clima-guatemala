@@ -88,7 +88,7 @@ df = cargar_datos()
 años_disp = sorted([int(x) for x in df['Año'].dropna().unique().tolist()], reverse=True)
 
 # -----------------------------------------------------------------------------
-# 3. GESTIÓN DE ESTADO (SOLUCIÓN DEFINITIVA)
+# 3. GESTIÓN DE ESTADO 
 # -----------------------------------------------------------------------------
 # Inicializar variables si no existen
 if 'sb_depto' not in st.session_state: st.session_state['sb_depto'] = 'Todos'
@@ -131,7 +131,7 @@ st.markdown("""
 <p style="color: white; font-size: 1rem; margin-bottom: 5px;">Realizado por:</p>
 <div style="color: #00f2ff; font-size: 1.6rem; font-weight: bold; text-shadow: 0 0 10px #00f2ff, 0 0 20px #00f2ff; margin-bottom: 10px;">José Esquina</div>
 <a href="https://www.linkedin.com/in/jose-esquina-0350aa159" target="_blank" style="text-decoration: none; color: white; border: 1px solid #00f2ff; padding: 6px 18px; border-radius: 25px; font-weight: bold; display: inline-block; margin-bottom: 10px; transition: 0.3s;">🔗 Contactar en LinkedIn</a>
-<p style="color: #cccccc; font-size: 0.9rem;"><b>AgroDATA</b> | Especialista en Investigación Agrícola | Python & GIS | Enfocado en Agricultura de Precisión</p>
+<p style="color: #cccccc; font-size: 0.9rem;"><b>AgroDATA</b> | Especialista en Investigación Agrícola | Python & GIS | Transformación Digital</p>
 </div>
 <hr>
 """, unsafe_allow_html=True)
@@ -152,7 +152,7 @@ if depto_selec != 'Todos':
 else:
     estaciones_disp = ['Todas'] + sorted(df['NOMBRE_ESTACIÓN'].unique().tolist())
 
-# Protección por si la estación seleccionada ya no existe en la lista nueva
+
 if st.session_state['sb_estacion'] not in estaciones_disp:
     st.session_state['sb_estacion'] = 'Todas'
 
@@ -246,7 +246,7 @@ with tab_resumen:
 
         st.markdown("---")
         st.subheader("📍 Ubicación Geográfica")
-        st.caption("Haz clic en un punto para filtrar. El mapa controla el menú lateral.")
+        st.caption("Haz clic en un punto para filtrar")
         
         if depto_selec != 'Todos':
             df_mapa = df[df['Departamento'] == depto_selec].groupby(['NOMBRE_ESTACIÓN', 'Latitud', 'Longitud', 'Departamento']).agg({'Precipitacion': 'sum'}).reset_index()
@@ -266,8 +266,8 @@ with tab_resumen:
         fig_map.update_traces(marker=dict(color=df_mapa['Color_Final'], size=df_mapa['Size_Final'], opacity=0.9, allowoverlap=True))
         fig_map.update_layout(clickmode='event+select', margin={"r":0,"t":0,"l":0,"b":0})
         
-        # --- MAPA CON ID DINÁMICO (LA CLAVE DEL ÉXITO) ---
-        # Al usar map_id en la key, obligamos a streamlit a redibujarlo limpio si cambia el filtro
+        # --- MAPA CON ID DINÁMICO ---
+        
         st.plotly_chart(fig_map, on_select="rerun", selection_mode="points", use_container_width=True, key=f"mapa_main_{st.session_state['map_id']}")
 
         with st.expander("📋 Ver Tabla de Datos Crudos"):
@@ -319,4 +319,5 @@ with tab_comp:
                               category_orders={"Mes_Nombre": ORDEN_MESES},
                               labels={"Mes_Nombre": "Mes"}), 
                        use_container_width=True)
+
 
