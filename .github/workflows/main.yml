@@ -11,4 +11,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ping Streamlit App
-        run: curl -I https://dashboard-clima-guatemala-bewnkfvypafure26wqwpxu.streamlit.app/
+        run: curl -L --user-agent "Mozilla/5.0" https://dashboard-clima-guatemala-bewnkfvypafure26wqwpxu.streamlit.app/
