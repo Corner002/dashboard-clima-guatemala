@@ -2,13 +2,22 @@ name: Keep App Awake
 
 on:
   schedule:
-    # Se ejecuta cada 6 horas (puedes ajustarlo)
-    - cron: '0 */6 * * *'
-  workflow_dispatch: # Permite ejecutarlo manualmente
+    # Cada 3 horas (más frecuente)
+    - cron: '0 */3 * * *'
+  workflow_dispatch: # Para ejecutar manualmente
 
 jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
       - name: Ping Streamlit App
-        run: curl --user-agent "Mozilla/5.0" https://dashboard-clima-guatemala-bewnkfvypafure26wqwpxu.streamlit.app/
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
+            https://dashboard-clima-guatemala-bewnkfyypafure26wqwpxu.streamlit.app/)
+          echo "Status: $response"
+          if [ $response -eq 200 ]; then
+            echo "✅ App is awake"
+          else
+            echo "⚠️ App returned $response"
+          fi
