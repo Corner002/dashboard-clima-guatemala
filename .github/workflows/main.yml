@@ -1,23 +1,53 @@
-name: Keep App Awake
+git add .github/workflows/main.yml
+   git commit -m "Optimizar keep-alive workflow"
+   git push
+```
 
-on:
-  schedule:
-    # Cada 3 horas (más frecuente)
-    - cron: '0 */3 * * *'
-  workflow_dispatch: # Para ejecutar manualmente
+---
 
-jobs:
-  ping:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Ping Streamlit App
-        run: |
-          response=$(curl -s -o /dev/null -w "%{http_code}" \
-            -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
-            https://dashboard-clima-guatemala-bewnkfyypafure26wqwpxu.streamlit.app/)
-          echo "Status: $response"
-          if [ $response -eq 200 ]; then
-            echo "✅ App is awake"
-          else
-            echo "⚠️ App returned $response"
-          fi
+## 🎓 ¿Por qué este enfoque funciona mejor?
+```
+✅ Sigue redirecciones automáticamente (-L)
+✅ Timeout de 60 segundos (suficiente para Streamlit)
+✅ Reintentos automáticos (--retry 2)
+✅ Headers de navegador real (evita detección)
+✅ Dos intentos con espera de 45 segundos
+✅ Ejecuta cada 10 minutos
+✅ 100% gratis (GitHub Actions da 2000 min/mes gratis)
+```
+
+---
+
+## ⏰ Frecuencia de ejecución:
+
+Con `cron: '*/10 * * * *'`:
+- **144 ejecuciones por día**
+- **~2 minutos de uso por día**
+- **~60 minutos por mes**
+- Muy por debajo del límite de 2000 min/mes de GitHub
+
+---
+
+## 🧪 Probar manualmente:
+
+Después de hacer commit:
+
+1. Ve a tu repo en GitHub
+2. Click en **"Actions"**
+3. Selecciona el workflow **"Keep Streamlit App Awake"**
+4. Click en **"Run workflow"** (botón derecho)
+5. Observa los logs en tiempo real
+
+---
+
+## 📊 Monitorear el éxito:
+
+En GitHub Actions verás:
+```
+✅ App está activa (código: 200)
+```
+
+O:
+```
+⏳ App dormida, esperando...
+✅ App despertó exitosamente en segundo intento
